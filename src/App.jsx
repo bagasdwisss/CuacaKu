@@ -1,7 +1,8 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getWeatherData } from './services/weatherService';
 
+// Impor semua komponen yang dibutuhkan
 import SearchBar from './components/SearchBar';
 import CurrentWeather from './components/CurrentWeather';
 import HourlyForecast from './components/HourlyForecast';
@@ -11,58 +12,90 @@ import FavoriteLocations from './components/FavoriteLocations';
 import SkeletonCurrentWeather from './components/SkeletonCurrentWeather';
 import SkeletonForecast from './components/SkeletonForecast';
 import DetectLocation from './components/DetectLocation';
-import ActivityIndex from './components/ActivityIndex'; // <-- Impor baru
-import DailySummary from './components/DailySummary';   // <-- Impor baru
+import ActivityIndex from './components/ActivityIndex';
+import DailySummary from './components/DailySummary';
 import { getThemeAndBackground } from './utils/themeService';
 
 function App() {
+  // --- State Management ---
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentCity, setCurrentCity] = useState('');
-
+  
+  // Mengambil favorit dari localStorage saat pertama kali dimuat
   const [favorites, setFavorites] = useState(() => {
-    const savedFavorites = localStorage.getItem('favoriteCities');
-    return savedFavorites ? JSON.parse(savedFavorites) : [];
+    try {
+      const savedFavorites = localStorage.getItem('favoriteCities');
+      return savedFavorites ? JSON.parse(savedFavorites) : [];
+    } catch (e) {
+      console.error("Gagal memuat favorit dari localStorage", e);
+      return [];
+    }
   });
 
-  useEffect(() => {
-    const initialCity = favorites.length > 0 ? favorites[0] : 'Medan';
-    fetchData(initialCity);
-  }, []); 
+  // --- Fungsi-fungsi Utama (Dioptimalkan dengan useCallback) ---
 
-  const fetchData = async (loc) => {
+  // Fungsi utama untuk mengambil data cuaca
+  const fetchData = useCallback(async (loc) => {
     setLoading(true);
     setError(null);
     try {
       const response = await getWeatherData(loc);
       setWeatherData(response);
-      setCurrentCity(response.location.name);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError('Lokasi tidak ditemukan atau terjadi kesalahan.');
+      setWeatherData(null); // Kosongkan data jika terjadi error
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // useCallback dengan dependency kosong karena tidak bergantung pada state lain
 
-  const handleToggleFavorite = (city) => { /* ... Logika tidak berubah ... */ };
-  const handleRemoveFavorite = (city) => { /* ... Logika tidak berubah ... */ };
-  // (Sisipkan logika handleToggleFavorite & handleRemoveFavorite dari jawaban sebelumnya di sini)
+  // Fungsi untuk menambah/menghapus favorit
+  const handleToggleFavorite = useCallback((city) => {
+    setFavorites(prevFavorites => {
+      const isFavorite = prevFavorites.some(fav => fav.toLowerCase() === city.toLowerCase());
+      const updatedFavorites = isFavorite
+        ? prevFavorites.filter(fav => fav.toLowerCase() !== city.toLowerCase())
+        : [...prevFavorites, city];
+      
+      localStorage.setItem('favoriteCities', JSON.stringify(updatedFavorites));
+      return updatedFavorites;
+    });
+  }, []);
 
-  const themeAndBackground = weatherData ? getThemeAndBackground(weatherData) : { theme: 'light', backgroundClass: 'bg-gray-100' };
+  // Fungsi untuk menghapus favorit dari daftar
+  const handleRemoveFavorite = useCallback((city) => {
+    setFavorites(prevFavorites => {
+      const updatedFavorites = prevFavorites.filter(fav => fav.toLowerCase() !== city.toLowerCase());
+      localStorage.setItem('favoriteCities', JSON.stringify(updatedFavorites));
+      return updatedFavorites;
+    });
+  }, []);
 
+
+  // --- Efek Samping (useEffect) ---
+
+  // Efek untuk memuat data awal saat aplikasi pertama kali dibuka
+  useEffect(() => {
+    const initialCity = favorites.length > 0 ? favorites[0] : 'Medan';
+    fetchData(initialCity);
+  }, [fetchData]); // Hanya bergantung pada fetchData
+
+  // Efek untuk mengubah tema terang/gelap
+  const theme = weatherData ? getThemeAndBackground(weatherData).theme : 'light';
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
-    root.classList.add(themeAndBackground.theme);
-  }, [themeAndBackground.theme]);
+    root.classList.add(theme);
+  }, [theme]);
 
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-1000 p-4 sm:p-6 lg:p-8`}>
       <div className="max-w-4xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-center mb-6">
-          <h1 className="flex items-center text-3xl font-bold text-blue-600 dark:text-blue-400 mb-4 sm:mb-0">CuacaKu
+          <h1 className="flex items-center text-3xl font-bold text-blue-600 dark:text-blue-400 mb-4 sm:mb-0">
+            CuacaKu
             <img 
               src="/logo.png" 
               alt="Logo CuacaKu" 
@@ -90,19 +123,18 @@ function App() {
             <div className="space-y-8">
               <FavoriteLocations 
                 favorites={favorites}
-                currentCity={currentCity}
+                currentCity={weatherData.location.name}
                 onToggleFavorite={handleToggleFavorite}
                 onSelectFavorite={fetchData}
                 onRemoveFavorite={handleRemoveFavorite}
               />
               <WeatherAlerts 
-                  alerts={weatherData.alerts} 
-                  current={weatherData.current} 
-                  hourly={weatherData.hourly}
-                  timezone={weatherData.timezone}
-                />
+                alerts={weatherData.alerts} 
+                current={weatherData.current} 
+                hourly={weatherData.hourly}
+                timezone={weatherData.timezone}
+              />
               <CurrentWeather data={weatherData} />
-              {/* ===== KOMPONEN BARU DITAMPILKAN DI SINI ===== */}
               <DailySummary dayData={weatherData.daily[0]} hourlyData={weatherData.hourly} />
               <ActivityIndex 
                 dailyData={weatherData.daily} 
@@ -115,27 +147,11 @@ function App() {
           )}
         </main>
          <footer className="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
-            <p>Weather data provided by <a href="https://www.visualcrossing.com/" title="Visual Crossing" className="text-blue-500 hover:underline">Visual Crossing</a></p>
+           <p>Weather data provided by <a href="https://www.visualcrossing.com/" title="Visual Crossing" className="text-blue-500 hover:underline">Visual Crossing</a></p>
         </footer>
       </div>
     </div>
   );
 }
-
-// Jangan lupa untuk menyalin fungsi ini juga jika terhapus
-App.prototype.handleToggleFavorite = function (city) {
-  const { favorites, setFavorites } = this;
-  const updatedFavorites = favorites.some(fav => fav.toLowerCase() === city.toLowerCase())
-    ? favorites.filter(fav => fav.toLowerCase() !== city.toLowerCase())
-    : [...favorites, city];
-  setFavorites(updatedFavorites);
-  localStorage.setItem('favoriteCities', JSON.stringify(updatedFavorites));
-};
-App.prototype.handleRemoveFavorite = function (city) {
-  const { favorites, setFavorites } = this;
-  const updatedFavorites = favorites.filter(fav => fav.toLowerCase() !== city.toLowerCase());
-  setFavorites(updatedFavorites);
-  localStorage.setItem('favoriteCities', JSON.stringify(updatedFavorites));
-};
 
 export default App;
