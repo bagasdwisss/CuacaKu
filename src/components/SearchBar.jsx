@@ -4,13 +4,88 @@ import { FaSearch } from 'react-icons/fa';
 
 // Daftar kota populer yang bisa kita tambahkan sendiri
 const popularCities = {
-  'indonesia': ['Jakarta', 'Surabaya', 'Medan', 'Bandung'],
-  'prancis': ['Paris', 'Marseille', 'Lyon', 'Nice'],
-  'jepang': ['Tokyo', 'Osaka', 'Kyoto', 'Sapporo'],
-  'malaysia': ['Kuala Lumpur', 'Penang', 'Johor Bahru'],
-  'singapura': ['Singapore'],
-  'amerika serikat': ['New York', 'Los Angeles', 'Chicago'],
+  'indonesia': [
+    'Jakarta', 'Surabaya', 'Medan', 'Bandung', 'Semarang',
+    'Yogyakarta', 'Makassar', 'Denpasar', 'Palembang', 'Balikpapan'
+  ],
+  'prancis': [
+    'Paris', 'Marseille', 'Lyon', 'Nice', 'Toulouse',
+    'Bordeaux', 'Nantes', 'Strasbourg', 'Lille', 'Montpellier'
+  ],
+  'jepang': [
+    'Tokyo', 'Osaka', 'Kyoto', 'Sapporo', 'Nagoya',
+    'Fukuoka', 'Hiroshima', 'Kobe', 'Yokohama', 'Nara'
+  ],
+  'malaysia': [
+    'Kuala Lumpur', 'Penang', 'Johor Bahru', 'Malacca', 'Kota Kinabalu',
+    'Kuching', 'Ipoh', 'Shah Alam', 'Petaling Jaya', 'Seremban'
+  ],
+  'singapura': [
+    'Singapore', 'Jurong East', 'Woodlands', 'Tampines', 'Hougang',
+    'Yishun', 'Choa Chu Kang', 'Bukit Batok', 'Punggol', 'Clementi'
+  ],
+  'amerika serikat': [
+    'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix',
+    'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose'
+  ],
+  'inggris': [
+    'London', 'Manchester', 'Birmingham', 'Liverpool', 'Leeds',
+    'Sheffield', 'Newcastle', 'Bristol', 'Nottingham', 'Oxford'
+  ],
+  'jerman': [
+    'Berlin', 'Munich', 'Hamburg', 'Frankfurt', 'Cologne',
+    'Stuttgart', 'Dusseldorf', 'Dresden', 'Nuremberg', 'Leipzig'
+  ],
+  'italia': [
+    'Rome', 'Milan', 'Naples', 'Turin', 'Florence',
+    'Venice', 'Bologna', 'Palermo', 'Genoa', 'Verona'
+  ],
+  'spanyol': [
+    'Madrid', 'Barcelona', 'Valencia', 'Seville', 'Bilbao',
+    'Malaga', 'Zaragoza', 'Granada', 'Toledo', 'Santander'
+  ],
+  'thailand': [
+    'Bangkok', 'Chiang Mai', 'Pattaya', 'Phuket', 'Ayutthaya',
+    'Hua Hin', 'Krabi', 'Chiang Rai', 'Ko Samui', 'Nakhon Ratchasima'
+  ],
+  'korea selatan': [
+    'Seoul', 'Busan', 'Incheon', 'Daegu', 'Daejeon',
+    'Gwangju', 'Suwon', 'Ulsan', 'Jeonju', 'Jeju City'
+  ],
+  'cina': [
+    'Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu',
+    'Wuhan', 'Hangzhou', 'Xi\'an', 'Tianjin', 'Nanjing'
+  ],
+  'india': [
+    'New Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Chennai',
+    'Kolkata', 'Jaipur', 'Ahmedabad', 'Pune', 'Lucknow'
+  ],
+  'australia': [
+    'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide',
+    'Canberra', 'Hobart', 'Darwin', 'Gold Coast', 'Cairns'
+  ],
+  'kanada': [
+    'Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa',
+    'Edmonton', 'Winnipeg', 'Quebec City', 'Halifax', 'Victoria'
+  ],
+  'rusia': [
+    'Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan',
+    'Nizhny Novgorod', 'Samara', 'Omsk', 'Chelyabinsk', 'Sochi'
+  ],
+  'turki': [
+    'Istanbul', 'Ankara', 'Izmir', 'Antalya', 'Bursa',
+    'Gaziantep', 'Konya', 'Adana', 'Trabzon', 'Eskisehir'
+  ],
+  'mesir': [
+    'Cairo', 'Alexandria', 'Giza', 'Luxor', 'Aswan',
+    'Sharm El Sheikh', 'Hurghada', 'Port Said', 'Suez', 'Mansoura'
+  ],
+  'brasil': [
+    'Rio de Janeiro', 'São Paulo', 'Brasília', 'Salvador', 'Fortaleza',
+    'Recife', 'Porto Alegre', 'Curitiba', 'Manaus', 'Belo Horizonte'
+  ]
 };
+
 
 const SearchBar = ({ onSearch }) => {
   const [query, setQuery] = useState('');
