@@ -99,7 +99,11 @@ function App() {
               <CurrentWeather data={weatherData} />
               {/* ===== KOMPONEN BARU DITAMPILKAN DI SINI ===== */}
               <DailySummary dayData={weatherData.daily[0]} hourlyData={weatherData.hourly} />
-              <ActivityIndex dailyData={weatherData.daily} currentData={weatherData.current} />
+              <ActivityIndex 
+                dailyData={weatherData.daily} 
+                currentData={weatherData.current} 
+                timezone={weatherData.timezone} 
+              />
               <HourlyForecast hourlyData={weatherData.hourly} />
               <DailyForecast dailyData={weatherData.daily} />
             </div>

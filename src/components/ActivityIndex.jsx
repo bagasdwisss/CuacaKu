@@ -2,38 +2,78 @@
 import React from 'react';
 import { FaRunning, FaTshirt, FaStar } from 'react-icons/fa';
 
-// Fungsi untuk menentukan rating berdasarkan kondisi
-const getActivityRatings = (today, current) => {
+// --- FUNGSI LOGIKA BARU YANG SUDAH DIPERBAIKI TOTAL ---
+const getActivityRatings = (today, current, timezone) => {
   const ratings = {};
+  
+  // --- 1. Logika Baru dan Mendalam untuk Olahraga Lari ---
+  const getRunningRating = () => {
+    const now = new Date();
+    const localTimeHour = parseInt(now.toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
 
-  // 1. Logika untuk Olahraga Lari
-  const isGoodTempForRun = today.temp > 18 && today.temp < 28;
-  const isNotRaining = today.precipprob < 25;
-  const isAqiGood = current.aqi < 100;
-  if (isGoodTempForRun && isNotRaining && isAqiGood) {
-    ratings.running = { label: 'Baik', color: 'text-green-500' };
-  } else if (isGoodTempForRun && isNotRaining) {
-    ratings.running = { label: 'Cukup', color: 'text-yellow-500' };
-  } else {
-    ratings.running = { label: 'Kurang', color: 'text-red-500' };
-  }
+    // Kondisi Pemblokir (Deal-breakers) -> Langsung Tidak Disarankan
+    if (localTimeHour >= 10 && localTimeHour < 16) {
+      return { label: 'Hindari', color: 'text-red-500', reason: 'Indeks UV terlalu tinggi.' };
+    }
+    if (current.aqi > 100) {
+      return { label: 'Hindari', color: 'text-red-500', reason: 'Kualitas udara buruk.' };
+    }
+    if (current.windspeed > 25) {
+      return { label: 'Hindari', color: 'text-red-500', reason: 'Angin terlalu kencang.' };
+    }
+    if (today.precipprob > 30) {
+        return { label: 'Hindari', color: 'text-red-500', reason: 'Risiko hujan tinggi.' };
+    }
 
-  // 2. Logika untuk Menjemur Pakaian
-  const isSunnyAndDry = today.precipprob < 15 && today.uvindex > 5;
-  if (isSunnyAndDry) {
+    // Cek Waktu Ideal
+    const isGoodRunTime = (localTimeHour >= 5 && localTimeHour < 8) || (localTimeHour >= 16 && localTimeHour < 18);
+    if (!isGoodRunTime) {
+      return { label: 'Kurang Ideal', color: 'text-yellow-500', reason: 'Bukan waktu terbaik untuk lari.' };
+    }
+
+    // Jika waktu ideal, cek kondisi lainnya untuk rating final
+    const isAqiPerfect = current.aqi <= 50;
+    const isHumidityIdeal = current.humidity >= 40 && current.humidity <= 60;
+    const isWindPerfect = current.windspeed <= 15;
+
+    // Kondisi Sempurna
+    if (isAqiPerfect && isHumidityIdeal && isWindPerfect) {
+      return { label: 'Sangat Baik', color: 'text-green-500' };
+    }
+
+    // Kondisi Cukup Baik (setidaknya beberapa faktor ideal)
+    if (!isAqiPerfect && current.aqi <= 100 && isHumidityIdeal) {
+        return { label: 'Cukup Baik', color: 'text-yellow-500' };
+    }
+    
+    // Jika tidak sempurna tapi masih dalam waktu lari yang baik
+    return { label: 'Bisa Dicoba', color: 'text-yellow-500' };
+  };
+
+  ratings.running = getRunningRating();
+
+  // --- 2. Logika yang Dipertajam untuk Menjemur Pakaian ---
+  const isHotAndDry = today.tempmax > 29 && today.precipprob < 15;
+  const isWindy = today.windspeed > 5 && today.windspeed < 30;
+
+  if (isHotAndDry && isWindy) {
     ratings.laundry = { label: 'Sangat Baik', color: 'text-green-500' };
-  } else if (today.precipprob < 40) {
-    ratings.laundry = { label: 'Cukup', color: 'text-yellow-500' };
+  } else if (isHotAndDry) {
+    ratings.laundry = { label: 'Cukup Baik', color: 'text-yellow-500' };
   } else {
-    ratings.laundry = { label: 'Tidak Disarankan', color: 'text-red-500' };
+    ratings.laundry = { label: 'Jangan Dulu', color: 'text-red-500' };
   }
 
-  // 3. Logika untuk Melihat Bintang
-  const isNight = new Date().getHours() >= 19 || new Date().getHours() < 5;
-  const isClearSky = today.cloudcover < 20;
-  if (isNight && isClearSky) {
+  // --- 3. Logika yang Dipertajam untuk Melihat Bintang ---
+  const now = new Date();
+  const localTimeHour = parseInt(now.toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
+  const sunsetHour = parseInt(new Date(current.sunsetEpoch * 1000).toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
+  const isNightTime = localTimeHour >= sunsetHour || localTimeHour < 5;
+  const isClearSky = today.cloudcover < 20; // Langit sangat cerah
+
+  if (isNightTime && isClearSky) {
     ratings.stargazing = { label: 'Ideal', color: 'text-green-500' };
-  } else if (isNight) {
+  } else if (isNightTime) {
     ratings.stargazing = { label: 'Berawan', color: 'text-yellow-500' };
   } else {
     ratings.stargazing = { label: 'Belum Malam', color: 'text-gray-500' };
@@ -42,11 +82,11 @@ const getActivityRatings = (today, current) => {
   return ratings;
 };
 
-const ActivityIndex = ({ dailyData, currentData }) => {
-  if (!dailyData || dailyData.length === 0 || !currentData) return null;
+const ActivityIndex = ({ dailyData, currentData, timezone }) => {
+  if (!dailyData || dailyData.length === 0 || !currentData || !timezone) return null;
 
   const today = dailyData[0];
-  const ratings = getActivityRatings(today, currentData);
+  const ratings = getActivityRatings(today, currentData, timezone);
 
   const activities = [
     { name: 'Olahraga Lari', icon: <FaRunning />, rating: ratings.running },
