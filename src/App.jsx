@@ -95,7 +95,12 @@ function App() {
                 onSelectFavorite={fetchData}
                 onRemoveFavorite={handleRemoveFavorite}
               />
-              <WeatherAlerts alerts={weatherData.alerts} current={weatherData.current} hourly={weatherData.hourly} />
+              <WeatherAlerts 
+                  alerts={weatherData.alerts} 
+                  current={weatherData.current} 
+                  hourly={weatherData.hourly}
+                  timezone={weatherData.timezone}
+                />
               <CurrentWeather data={weatherData} />
               {/* ===== KOMPONEN BARU DITAMPILKAN DI SINI ===== */}
               <DailySummary dayData={weatherData.daily[0]} hourlyData={weatherData.hourly} />
