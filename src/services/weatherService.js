@@ -2,10 +2,11 @@ import axios from 'axios';
 
 const VC_API_KEY = import.meta.env.VITE_VISUALCROSSING_API_KEY;
 const AQI_API_KEY = import.meta.env.VITE_AQI_API_KEY;
-const PS_API_KEY = import.meta.env.VITE_POSITIONSTACK_API_KEY; 
+const PS_API_KEY = import.meta.env.VITE_POSITIONSTACK_API_KEY; // Key untuk Geocoding dari PositionStack
 
 const VC_BASE_URL = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/';
 const AQI_BASE_URL = 'https://api.waqi.info/feed/geo:';
+// URL Geocoding dari PositionStack. Catatan: Paket gratis menggunakan HTTP.
 const GEOCODING_URL = 'http://api.positionstack.com/v1/forward';
 
 const convertAqiToScale = (aqiValue) => {
@@ -31,10 +32,8 @@ export const getWeatherData = async (location) => {
     const result = geoResponse.data.data[0];
     latitude = result.latitude;
     longitude = result.longitude;
-    // Simpan nama yang sudah terverifikasi dari Geocoding API
     verifiedCityName = result.locality || result.name;
     verifiedCountryName = result.country;
-
   } else {
     [latitude, longitude] = location.split(',').map(Number);
   }
@@ -62,15 +61,18 @@ export const getWeatherData = async (location) => {
   }
 
   // --- Langkah 4: Logika Final untuk Menentukan Nama Lokasi ---
-  let finalCityName = verifiedCityName; // Gunakan nama dari Geocoding
+  let finalCityName = verifiedCityName;
   let finalCountryName = verifiedCountryName;
 
-  // Jika nama dari Geocoding tidak ada (misalnya input adalah koordinat), gunakan fallback
   if (!finalCityName) {
     if (aqiCityName) {
       const parts = aqiCityName.split(',').map(part => part.trim());
       finalCityName = parts[0];
       if (parts.length > 1 && isNaN(parts[parts.length - 1])) finalCountryName = parts[parts.length - 1];
+    } else if (weatherData.resolvedAddress) {
+      const addressParts = weatherData.resolvedAddress.split(',').map(part => part.trim());
+      finalCityName = addressParts[0];
+      if (addressParts.length > 1 && isNaN(addressParts[addressParts.length - 1])) finalCountryName = addressParts[addressParts.length - 1];
     } else {
       finalCityName = location;
     }
