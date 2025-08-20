@@ -2,12 +2,11 @@ import axios from 'axios';
 
 const VC_API_KEY = import.meta.env.VITE_VISUALCROSSING_API_KEY;
 const AQI_API_KEY = import.meta.env.VITE_AQI_API_KEY;
-const PS_API_KEY = import.meta.env.VITE_POSITIONSTACK_API_KEY; // Key untuk Geocoding dari PositionStack
+const GEO_API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY; // Key untuk Geocoding
 
 const VC_BASE_URL = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/';
 const AQI_BASE_URL = 'https://api.waqi.info/feed/geo:';
-// URL Geocoding dari PositionStack. Catatan: Paket gratis menggunakan HTTP.
-const GEOCODING_URL = 'http://api.positionstack.com/v1/forward';
+const GEOCODING_URL = 'https://api.geoapify.com/v1/geocode/search'; // URL Geocoding baru (HTTPS)
 
 const convertAqiToScale = (aqiValue) => {
   if (aqiValue <= 50) return 1; if (aqiValue <= 100) return 2;
@@ -21,18 +20,18 @@ export const getWeatherData = async (location) => {
   let latitude, longitude;
   let verifiedCityName, verifiedCountryName;
 
-  // --- Langkah 1: Dapatkan Koordinat yang Akurat dengan PositionStack ---
+  // --- Langkah 1: Dapatkan Koordinat yang Akurat dengan Geoapify ---
   if (!isCoordinates(location)) {
     const geoResponse = await axios.get(GEOCODING_URL, {
-      params: { access_key: PS_API_KEY, query: location, limit: 1 },
+      params: { text: location, limit: 1, apiKey: GEO_API_KEY },
     });
-    if (!geoResponse.data || !geoResponse.data.data || geoResponse.data.data.length === 0) {
+    if (!geoResponse.data || !geoResponse.data.features || geoResponse.data.features.length === 0) {
       throw new Error(`Lokasi "${location}" tidak dapat ditemukan.`);
     }
-    const result = geoResponse.data.data[0];
-    latitude = result.latitude;
-    longitude = result.longitude;
-    verifiedCityName = result.locality || result.name;
+    const result = geoResponse.data.features[0].properties;
+    latitude = result.lat;
+    longitude = result.lon;
+    verifiedCityName = result.city;
     verifiedCountryName = result.country;
   } else {
     [latitude, longitude] = location.split(',').map(Number);
