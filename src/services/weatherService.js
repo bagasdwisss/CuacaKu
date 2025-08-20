@@ -1,59 +1,85 @@
-// src/services/weatherService.js
 import axios from 'axios';
 
 const VC_API_KEY = import.meta.env.VITE_VISUALCROSSING_API_KEY;
-const AQI_API_KEY = import.meta.env.VITE_AQI_API_KEY; // <-- Menggunakan key baru
+const AQI_API_KEY = import.meta.env.VITE_AQI_API_KEY;
+const PS_API_KEY = import.meta.env.VITE_POSITIONSTACK_API_KEY; 
 
 const VC_BASE_URL = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/';
 const AQI_BASE_URL = 'https://api.waqi.info/feed/geo:';
+const GEOCODING_URL = 'http://api.positionstack.com/v1/forward';
 
-// Fungsi helper untuk mengubah skala AQI dari WAQI (0-500+) ke skala kita (1-5)
 const convertAqiToScale = (aqiValue) => {
-  if (aqiValue <= 50) return 1;  // Baik
-  if (aqiValue <= 100) return 2; // Sedang
-  if (aqiValue <= 150) return 3; // Kurang Sehat (Sensitif)
-  if (aqiValue <= 200) return 4; // Tidak Sehat
-  if (aqiValue > 200) return 5;  // Sangat Buruk
-  return null; // Jika data tidak valid
+  if (aqiValue <= 50) return 1; if (aqiValue <= 100) return 2;
+  if (aqiValue <= 150) return 3; if (aqiValue <= 200) return 4;
+  if (aqiValue > 200) return 5; return null;
 };
 
+const isCoordinates = (str) => /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(str);
+
 export const getWeatherData = async (location) => {
-  // --- Langkah 1: Ambil data cuaca utama dari Visual Crossing ---
-  const vcUrl = `${VC_BASE_URL}${encodeURIComponent(location)}?unitGroup=metric&include=hours,current,alerts&key=${VC_API_KEY}&contentType=json`;
-  const weatherResponse = await axios.get(vcUrl);
-  const weatherData = weatherResponse.data;
+  let latitude, longitude;
+  let verifiedCityName, verifiedCountryName;
 
-  const { latitude, longitude } = weatherData;
-
-  let aqiValue = null;
-  try {
-    // --- Langkah 2: Gunakan koordinat untuk mengambil data AQI dari WAQI ---
-    const aqiUrl = `${AQI_BASE_URL}${latitude};${longitude}/?token=${AQI_API_KEY}`;
-    const aqiResponse = await axios.get(aqiUrl);
-
-    // Cek jika API merespon dengan 'ok' dan ada data AQI
-    if (aqiResponse.data.status === 'ok' && aqiResponse.data.data.aqi) {
-      const rawAqi = aqiResponse.data.data.aqi;
-      // Konversi nilai AQI mentah ke skala 1-5 yang digunakan UI kita
-      aqiValue = convertAqiToScale(rawAqi);
+  // --- Langkah 1: Dapatkan Koordinat yang Akurat dengan PositionStack ---
+  if (!isCoordinates(location)) {
+    const geoResponse = await axios.get(GEOCODING_URL, {
+      params: { access_key: PS_API_KEY, query: location, limit: 1 },
+    });
+    if (!geoResponse.data || !geoResponse.data.data || geoResponse.data.data.length === 0) {
+      throw new Error(`Lokasi "${location}" tidak dapat ditemukan.`);
     }
-  } catch (error) {
-    console.error("Gagal mengambil data AQI dari WAQI:", error);
-    aqiValue = null;
+    const result = geoResponse.data.data[0];
+    latitude = result.latitude;
+    longitude = result.longitude;
+    // Simpan nama yang sudah terverifikasi dari Geocoding API
+    verifiedCityName = result.locality || result.name;
+    verifiedCountryName = result.country;
+
+  } else {
+    [latitude, longitude] = location.split(',').map(Number);
   }
 
-  // --- Langkah 3: Gabungkan semua data menjadi satu objek ---
-  const addressParts = weatherData.resolvedAddress.split(',').map(part => part.trim());
-  const cityName = addressParts[0];
-  const countryName = addressParts.length > 1 ? addressParts[addressParts.length - 1] : '';
+  // --- Langkah 2: Ambil Data Cuaca & AQI dengan Koordinat Terverifikasi ---
+  const vcUrl = `${VC_BASE_URL}${latitude},${longitude}?unitGroup=metric&include=hours,current,alerts&key=${VC_API_KEY}&contentType=json`;
+  const aqiUrl = `${AQI_BASE_URL}${latitude};${longitude}/?token=${AQI_API_KEY}`;
+
+  const [weatherResponse, aqiResponse] = await Promise.all([
+    axios.get(vcUrl).catch(err => { console.error("VC API Error:", err); return null; }),
+    axios.get(aqiUrl).catch(err => { console.error("AQI API Error:", err); return null; })
+  ]);
+  
+  if (!weatherResponse || !weatherResponse.data) {
+    throw new Error("Gagal mengambil data cuaca utama.");
+  }
+  const weatherData = weatherResponse.data;
+
+  // --- Langkah 3: Proses Data AQI dan Nama Lokasi Cadangan ---
+  let aqiValue = null;
+  let aqiCityName = null;
+  if (aqiResponse && aqiResponse.data && aqiResponse.data.status === 'ok' && aqiResponse.data.data) {
+    if (aqiResponse.data.data.aqi) aqiValue = convertAqiToScale(aqiResponse.data.data.aqi);
+    if (aqiResponse.data.data.city && aqiResponse.data.data.city.name) aqiCityName = aqiResponse.data.data.city.name;
+  }
+
+  // --- Langkah 4: Logika Final untuk Menentukan Nama Lokasi ---
+  let finalCityName = verifiedCityName; // Gunakan nama dari Geocoding
+  let finalCountryName = verifiedCountryName;
+
+  // Jika nama dari Geocoding tidak ada (misalnya input adalah koordinat), gunakan fallback
+  if (!finalCityName) {
+    if (aqiCityName) {
+      const parts = aqiCityName.split(',').map(part => part.trim());
+      finalCityName = parts[0];
+      if (parts.length > 1 && isNaN(parts[parts.length - 1])) finalCountryName = parts[parts.length - 1];
+    } else {
+      finalCityName = location;
+    }
+  }
 
   return {
-    location: { name: cityName, country: countryName },
+    location: { name: finalCityName, country: finalCountryName },
     timezone: weatherData.timezone,
-    current: {
-      ...weatherData.currentConditions,
-      aqi: aqiValue, // Suntikkan data AQI yang sudah dikonversi
-    },
+    current: { ...weatherData.currentConditions, aqi: aqiValue },
     hourly: weatherData.days[0].hours,
     daily: weatherData.days,
     alerts: weatherData.alerts || [],

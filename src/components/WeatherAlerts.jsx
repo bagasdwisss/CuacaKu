@@ -3,22 +3,19 @@ import React from 'react';
 import { FiSun, FiUmbrella, FiAlertTriangle, FiWind } from 'react-icons/fi';
 
 const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
-  // Jika data belum lengkap, jangan render apa-apa
   if (!current || !hourly || !timezone) {
     return null;
   }
 
   const suggestions = [];
   const now = new Date();
-  
-  // Menggunakan jam lokal di lokasi yang dicari, bukan jam di komputer Anda
   const currentHour = parseInt(now.toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
   
   const upcomingHours = hourly
     .filter(hour => parseInt(hour.datetime.split(':')[0], 10) >= currentHour)
-    .slice(0, 6); // Analisis untuk 6 jam ke depan
+    .slice(0, 6);
 
-  // --- LOGIKA BARU YANG LEBIH CERDAS ---
+  // --- LOGIKA BARU YANG SUDAH DIPERTAJAM ---
 
   // 1. Peringatan Cuaca Ekstrem dari API (Prioritas Tertinggi)
   const apiAlerts = (alerts || []).map(alert => ({
@@ -29,51 +26,63 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
   }));
   suggestions.push(...apiAlerts);
 
+  // 2. Analisis Potensi Hujan & Angin
+  const heavyRainHour = upcomingHours.find(hour => hour.precipprob > 60 && hour.precip > 5);
+  const lightRainHour = upcomingHours.find(hour => hour.precipprob > 50);
+  const strongWindHour = upcomingHours.find(hour => hour.windspeed > 30);
 
-  // 2. Analisis Potensi Hujan & Angin (Hanya jika tidak ada alert badai dari API)
-  if (!suggestions.some(alert => alert.message.toLowerCase().includes('thunderstorm'))) {
-    const heavyRainHour = upcomingHours.find(hour => hour.precipprob > 60 && hour.precip > 5);
-    const lightRainHour = upcomingHours.find(hour => hour.precipprob > 50);
-    const strongWindHour = upcomingHours.find(hour => hour.windspeed > 30); // Angin kencang > 30 km/j
-
-    // Peringatan Hujan Lebat/Banjir (lebih prioritas)
-    if (heavyRainHour) {
-      suggestions.push({
-        id: 'heavy-rain',
-        type: 'danger',
-        icon: <FiAlertTriangle className="text-red-500" />,
-        message: `Hujan sangat lebat diprediksi terjadi sekitar pukul ${heavyRainHour.datetime.slice(0, 5)}. Waspada potensi genangan.`,
-      });
-    } 
-    // Jika tidak ada hujan lebat, baru cek hujan ringan
-    else if (lightRainHour) {
-      suggestions.push({
-        id: 'light-rain',
-        type: 'info',
-        icon: <FiUmbrella className="text-blue-500" />,
-        message: `Ada kemungkinan hujan dalam beberapa jam ke depan. Sebaiknya siapkan payung.`,
-      });
-    }
-
-    // Peringatan Angin Kencang (bisa muncul bersamaan dengan hujan)
-    if (strongWindHour) {
-      suggestions.push({
-        id: 'strong-wind',
-        type: 'warning',
-        icon: <FiWind className="text-orange-500" />,
-        message: `Angin kencang dengan kecepatan ${Math.round(strongWindHour.windspeed)} km/j diprediksi terjadi.`,
-      });
-    }
+  if (heavyRainHour) {
+    suggestions.push({
+      id: 'heavy-rain',
+      type: 'danger',
+      icon: <FiAlertTriangle className="text-red-500" />,
+      message: `Hujan sangat lebat diprediksi terjadi sekitar pukul ${heavyRainHour.datetime.slice(0, 5)}. Waspada potensi genangan.`,
+    });
+  } else if (lightRainHour) {
+    suggestions.push({
+      id: 'light-rain',
+      type: 'info',
+      icon: <FiUmbrella className="text-blue-500" />,
+      message: 'Ada kemungkinan hujan dalam beberapa jam ke depan. Sebaiknya siapkan payung.',
+    });
   }
 
-  // 3. Saran Sunscreen (Hanya jika tidak hujan)
-  if (!suggestions.some(alert => alert.id.includes('rain'))) {
-    if (current.uvindex > 6 && currentHour >= 9 && currentHour <= 16) {
+  if (strongWindHour) {
+    suggestions.push({
+      id: 'strong-wind',
+      type: 'warning',
+      icon: <FiWind className="text-orange-500" />,
+      message: `Angin kencang dengan kecepatan ${Math.round(strongWindHour.windspeed)} km/j diprediksi terjadi.`,
+    });
+  }
+
+  // 3. LOGIKA BARU & SPESIFIK UNTUK UV INDEX
+  const isSunRelevantTime = currentHour >= 9 && currentHour <= 16;
+  const isRainingNow = current.icon.includes('rain') || current.icon.includes('showers') || current.icon.includes('thunder');
+  const uvIndex = current.uvindex;
+  
+  // Saran sunscreen hanya muncul jika sedang tidak hujan dan di jam yang relevan
+  if (isSunRelevantTime && !isRainingNow) {
+    if (uvIndex >= 8) {
       suggestions.push({
-        id: 'uv-index',
+        id: 'uv-extreme',
+        type: 'danger',
+        icon: <FiSun className="text-red-500" />,
+        message: `UV Sangat Ekstrem (${uvIndex}). Wajib gunakan sunscreen SPF 50+ dan hindari paparan langsung.`,
+      });
+    } else if (uvIndex >= 6) {
+      suggestions.push({
+        id: 'uv-high',
         type: 'warning',
+        icon: <FiSun className="text-orange-500" />,
+        message: `Indeks UV Tinggi (${uvIndex}). Disarankan gunakan sunscreen minimal SPF 30-50.`,
+      });
+    } else if (uvIndex >= 3) {
+      suggestions.push({
+        id: 'uv-moderate',
+        type: 'info',
         icon: <FiSun className="text-yellow-500" />,
-        message: `Indeks UV sangat tinggi (${current.uvindex}). Gunakan sunscreen jika beraktivitas di luar.`,
+        message: `Indeks UV Sedang (${uvIndex}). Gunakan sunscreen minimal SPF 30 jika keluar.`,
       });
     }
   }

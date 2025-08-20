@@ -22,7 +22,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Mengambil favorit dari localStorage saat pertama kali dimuat
   const [favorites, setFavorites] = useState(() => {
     try {
       const savedFavorites = localStorage.getItem('favoriteCities');
@@ -35,7 +34,6 @@ function App() {
 
   // --- Fungsi-fungsi Utama (Dioptimalkan dengan useCallback) ---
 
-  // Fungsi utama untuk mengambil data cuaca
   const fetchData = useCallback(async (loc) => {
     setLoading(true);
     setError(null);
@@ -45,13 +43,12 @@ function App() {
     } catch (err) {
       console.error("Error fetching data:", err);
       setError('Lokasi tidak ditemukan atau terjadi kesalahan.');
-      setWeatherData(null); // Kosongkan data jika terjadi error
+      setWeatherData(null);
     } finally {
       setLoading(false);
     }
-  }, []); // useCallback dengan dependency kosong karena tidak bergantung pada state lain
+  }, []);
 
-  // Fungsi untuk menambah/menghapus favorit
   const handleToggleFavorite = useCallback((city) => {
     setFavorites(prevFavorites => {
       const isFavorite = prevFavorites.some(fav => fav.toLowerCase() === city.toLowerCase());
@@ -64,7 +61,6 @@ function App() {
     });
   }, []);
 
-  // Fungsi untuk menghapus favorit dari daftar
   const handleRemoveFavorite = useCallback((city) => {
     setFavorites(prevFavorites => {
       const updatedFavorites = prevFavorites.filter(fav => fav.toLowerCase() !== city.toLowerCase());
@@ -76,13 +72,11 @@ function App() {
 
   // --- Efek Samping (useEffect) ---
 
-  // Efek untuk memuat data awal saat aplikasi pertama kali dibuka
   useEffect(() => {
     const initialCity = favorites.length > 0 ? favorites[0] : 'Medan';
     fetchData(initialCity);
-  }, [fetchData]); // Hanya bergantung pada fetchData
+  }, [fetchData]);
 
-  // Efek untuk mengubah tema terang/gelap
   const theme = weatherData ? getThemeAndBackground(weatherData).theme : 'light';
   useEffect(() => {
     const root = window.document.documentElement;
@@ -93,8 +87,8 @@ function App() {
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-1000 p-4 sm:p-6 lg:p-8`}>
       <div className="max-w-4xl mx-auto">
-        <header className="flex flex-col sm:flex-row justify-between items-center mb-6">
-          <h1 className="flex items-center text-3xl font-bold text-blue-600 dark:text-blue-400 mb-4 sm:mb-0">
+        <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="flex items-center text-3xl font-bold text-blue-600 dark:text-blue-400">
             CuacaKu
             <img 
               src="/logo.png" 
@@ -102,13 +96,16 @@ function App() {
               className="h-10 w-10 ml-2 align-middle" 
             />
           </h1>
-          <div className="w-full sm:w-auto">
+          
+          {/* Desain header baru: SearchBar dan DetectLocation berdampingan */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <SearchBar onSearch={fetchData} />
+            <DetectLocation onDetect={fetchData} />
           </div>
         </header>
 
         <main>
-          <DetectLocation onDetect={fetchData} />
+          {/* Komponen DetectLocation sudah dipindah ke header */}
           
           {error && <p className="text-center text-xl text-red-500">{error}</p>}
           
