@@ -38,7 +38,7 @@ function App() {
     try {
       const response = await getWeatherData(loc);
       setWeatherData(response);
-    } catch (err) {
+    } catch (err) { // <-- Kurung kurawal yang hilang sudah diperbaiki
       console.error("Error fetching data:", err);
       setError('Lokasi tidak ditemukan atau terjadi kesalahan.');
       setWeatherData(null);
@@ -70,14 +70,10 @@ function App() {
 
   // --- Efek Samping (useEffect) ---
 
-  // Efek untuk memuat data awal saat aplikasi pertama kali dibuka
   useEffect(() => {
-    // ===== PERUBAHAN DI SINI =====
-    // Sekarang akan selalu memuat "Medan" sebagai default
     fetchData('Medan');
-  }, [fetchData]); // Hanya akan berjalan sekali saat komponen dimuat
+  }, [fetchData]);
 
-  // Efek untuk mengubah tema terang/gelap
   const theme = weatherData ? getThemeAndBackground(weatherData).theme : 'light';
   useEffect(() => {
     const root = window.document.documentElement;
@@ -86,8 +82,11 @@ function App() {
   }, [theme]);
 
   return (
-    <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-1000 p-4 sm:p-6 lg:p-8`}>
-      <div className="max-w-4xl mx-auto">
+    // ===== PERBAIKAN STRUKTUR LAYOUT DI SINI =====
+    // 1. Div terluar diubah menjadi container flexbox vertikal
+    <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-1000 flex flex-col`}>
+      {/* 2. Div ini sekarang bertanggung jawab atas padding dan ikut tumbuh mengisi ruang */}
+      <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col flex-grow">
         <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="flex items-center text-3xl font-bold text-blue-600 dark:text-blue-400">
             CuacaKu
@@ -104,7 +103,9 @@ function App() {
           </div>
         </header>
 
-        <main>
+        {/* 3. Main sekarang akan mendorong footer ke bawah */}
+        {/* Tambahkan class flex untuk menengahkan loader */}
+        <main className={`flex-grow ${loading && !weatherData ? 'flex flex-col justify-center' : ''}`}>
           {error && <p className="text-center text-xl text-red-500">{error}</p>}
           
           {loading && !weatherData && (
@@ -138,8 +139,9 @@ function App() {
             </div>
           )}
         </main>
-         <footer className="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
+         <footer className="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm flex-shrink-0">
            <p>Weather data provided by <a href="https://www.visualcrossing.com/" title="Visual Crossing" className="text-blue-500 hover:underline">Visual Crossing</a></p>
+           <p>AQI data provided by <a href="https://aqicn.org/" title="AQICN" className="text-blue-500 hover:underline">AQICN</a></p>
         </footer>
       </div>
     </div>

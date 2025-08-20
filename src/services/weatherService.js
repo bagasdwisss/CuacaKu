@@ -77,10 +77,10 @@ export const getWeatherData = async (location) => {
     }
   }
 
-  // ===== PERBAIKAN DI SINI: Membersihkan nama kota =====
-  // Menghapus "City of " jika ada di awal nama kota
-  if (finalCityName && finalCityName.startsWith('City of ')) {
-    finalCityName = finalCityName.replace('City of ', '');
+  // ===== PERBAIKAN FINAL DI SINI: Membersihkan nama kota dengan lebih baik =====
+  // Regex ini sekarang juga akan menghapus "Special Capital Region of" dan variasi lainnya
+  if (finalCityName) {
+    finalCityName = finalCityName.replace(/^(city of|kota|kabupaten|regency of|special capital region of)\s/i, '').trim();
   }
 
   return {

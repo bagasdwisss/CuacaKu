@@ -1,4 +1,3 @@
-// src/components/DetectLocation.jsx
 import React, { useState, useEffect } from 'react';
 import { FaMapMarkerAlt, FaSpinner, FaTimes } from 'react-icons/fa';
 import { FiAlertTriangle } from 'react-icons/fi';
@@ -7,13 +6,13 @@ const DetectLocation = ({ onDetect }) => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState('');
 
-  // Logika baru: Otomatis sembunyikan pop-up setelah 5 detik
+  // Otomatis sembunyikan pop-up setelah 5 detik
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         setError('');
-      }, 5000); // 5000ms = 5 detik
-      return () => clearTimeout(timer); // Membersihkan timer jika komponen di-unmount
+      }, 5000);
+      return () => clearTimeout(timer);
     }
   }, [error]);
 
@@ -56,7 +55,6 @@ const DetectLocation = ({ onDetect }) => {
   };
 
   return (
-    // Menggunakan React Fragment agar bisa merender tombol dan pop-up
     <>
       <button
         onClick={handleDetect}
@@ -67,10 +65,10 @@ const DetectLocation = ({ onDetect }) => {
         {isDetecting ? <FaSpinner className="animate-spin" size={18} /> : <FaMapMarkerAlt size={18} />}
       </button>
 
-      {/* --- POP-UP NOTIFIKASI ERROR BARU --- */}
+      {/* --- POP-UP NOTIFIKASI DENGAN DESAIN RESPONSIVE BARU --- */}
       {error && (
         <div 
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 w-11/12 max-w-md 
+          className="fixed bottom-4 left-4 right-4 sm:w-auto sm:max-w-md sm:left-1/2 sm:-translate-x-1/2 sm:right-auto
                      bg-red-500 text-white p-4 rounded-lg shadow-2xl 
                      flex items-center justify-between z-50 animate-toast-in"
           role="alert"
