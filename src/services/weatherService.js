@@ -71,10 +71,16 @@ export const getWeatherData = async (location) => {
     } else if (weatherData.resolvedAddress) {
       const addressParts = weatherData.resolvedAddress.split(',').map(part => part.trim());
       finalCityName = addressParts[0];
-      if (addressParts.length > 1 && isNaN(addressParts[addressParts.length - 1])) finalCountryName = addressParts[addressParts.length - 1];
+      if (addressParts.length > 1 && isNaN(addressParts[parts.length - 1])) finalCountryName = addressParts[parts.length - 1];
     } else {
       finalCityName = location;
     }
+  }
+
+  // ===== PERBAIKAN DI SINI: Membersihkan nama kota =====
+  // Menghapus "City of " jika ada di awal nama kota
+  if (finalCityName && finalCityName.startsWith('City of ')) {
+    finalCityName = finalCityName.replace('City of ', '');
   }
 
   return {
