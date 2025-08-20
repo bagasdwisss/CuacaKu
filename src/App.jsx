@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { getWeatherData } from './services/weatherService';
 
@@ -9,8 +8,7 @@ import HourlyForecast from './components/HourlyForecast';
 import DailyForecast from './components/DailyForecast';
 import WeatherAlerts from './components/WeatherAlerts';
 import FavoriteLocations from './components/FavoriteLocations';
-import SkeletonCurrentWeather from './components/SkeletonCurrentWeather';
-import SkeletonForecast from './components/SkeletonForecast';
+import ThemedLoader from './components/ThemedLoader';
 import DetectLocation from './components/DetectLocation';
 import ActivityIndex from './components/ActivityIndex';
 import DailySummary from './components/DailySummary';
@@ -72,11 +70,14 @@ function App() {
 
   // --- Efek Samping (useEffect) ---
 
+  // Efek untuk memuat data awal saat aplikasi pertama kali dibuka
   useEffect(() => {
-    const initialCity = favorites.length > 0 ? favorites[0] : 'Medan';
-    fetchData(initialCity);
-  }, [fetchData]);
+    // ===== PERUBAHAN DI SINI =====
+    // Sekarang akan selalu memuat "Medan" sebagai default
+    fetchData('Medan');
+  }, [fetchData]); // Hanya akan berjalan sekali saat komponen dimuat
 
+  // Efek untuk mengubah tema terang/gelap
   const theme = weatherData ? getThemeAndBackground(weatherData).theme : 'light';
   useEffect(() => {
     const root = window.document.documentElement;
@@ -97,7 +98,6 @@ function App() {
             />
           </h1>
           
-          {/* Desain header baru: SearchBar dan DetectLocation berdampingan */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <SearchBar onSearch={fetchData} />
             <DetectLocation onDetect={fetchData} />
@@ -105,15 +105,10 @@ function App() {
         </header>
 
         <main>
-          {/* Komponen DetectLocation sudah dipindah ke header */}
-          
           {error && <p className="text-center text-xl text-red-500">{error}</p>}
           
           {loading && !weatherData && (
-            <div className="space-y-8">
-              <SkeletonCurrentWeather />
-              <SkeletonForecast />
-            </div>
+            <ThemedLoader />
           )}
 
           {weatherData && (
@@ -131,7 +126,7 @@ function App() {
                 hourly={weatherData.hourly}
                 timezone={weatherData.timezone}
               />
-              <CurrentWeather data={weatherData} />
+              <CurrentWeather data={weatherData} loading={loading} />
               <DailySummary dayData={weatherData.daily[0]} hourlyData={weatherData.hourly} />
               <ActivityIndex 
                 dailyData={weatherData.daily} 
