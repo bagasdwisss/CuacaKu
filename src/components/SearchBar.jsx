@@ -29,24 +29,27 @@ const popularCities = {
 const SearchBar = ({ onSearch }) => {
   const [query, setQuery] = useState('');
   const [recommendations, setRecommendations] = useState([]);
-  const searchBarRef = useRef(null); // 1. Buat ref untuk membungkus komponen
+  const searchBarRef = useRef(null);
 
-  // 2. Hook untuk mendeteksi klik di luar komponen
+  // --- LOGIKA BARU YANG SUDAH DIPERBAIKI ---
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Jika ref sudah terpasang DAN klik terjadi di luar elemen ref
+      // Cek apakah elemen yang diklik berada di luar komponen SearchBar
       if (searchBarRef.current && !searchBarRef.current.contains(event.target)) {
-        setRecommendations([]); // Sembunyikan rekomendasi
+        // Jika ya, sembunyikan rekomendasi DAN reset input pencarian
+        setRecommendations([]);
+        setQuery('');
       }
     };
 
-    // Tambahkan event listener saat komponen dimuat
+    // Tambahkan event listener saat komponen pertama kali dimuat
     document.addEventListener('mousedown', handleClickOutside);
-    // Hapus event listener saat komponen dibongkar untuk mencegah memory leak
+    
+    // Hapus event listener saat komponen akan dibongkar untuk mencegah kebocoran memori
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []); // Array kosong berarti efek ini hanya berjalan sekali
+  }, []); // Array dependensi kosong agar efek ini hanya berjalan sekali
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -85,7 +88,6 @@ const SearchBar = ({ onSearch }) => {
   };
 
   return (
-    // 3. Pasang ref ke div pembungkus utama
     <div ref={searchBarRef} className="relative w-full max-w-md mx-auto">
       <form onSubmit={handleSearch}>
         <div className="relative flex items-center text-gray-500 focus-within:text-blue-600">
