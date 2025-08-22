@@ -22,16 +22,14 @@ const popularCities = {
   'rusia': ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan', 'Nizhny Novgorod', 'Samara', 'Omsk', 'Chelyabinsk', 'Sochi'],
   'turki': ['Istanbul', 'Ankara', 'Izmir', 'Antalya', 'Bursa', 'Gaziantep', 'Konya', 'Adana', 'Trabzon', 'Eskisehir'],
   'mesir': ['Cairo', 'Alexandria', 'Giza', 'Luxor', 'Aswan', 'Sharm El Sheikh', 'Hurghada', 'Port Said', 'Suez', 'Mansoura'],
-  'brasil': ['Rio de Janeiro', 'São Paulo', 'Brasília', 'Salvador', 'Fortaleza', 'Recife', 'Porto Alegre', 'Curitiba', 'Manaus', 'Belo Horizonte']
+  'brasil': ['Rio de Janeiro', 'SÃ£o Paulo', 'BrasÃ­lia', 'Salvador', 'Fortaleza', 'Recife', 'Porto Alegre', 'Curitiba', 'Manaus', 'Belo Horizonte']
 };
-
 
 const SearchBar = ({ onSearch }) => {
   const [query, setQuery] = useState('');
   const [recommendations, setRecommendations] = useState([]);
   const searchBarRef = useRef(null);
 
-  // --- LOGIKA BARU YANG SUDAH DIPERBAIKI ---
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Cek apakah elemen yang diklik berada di luar komponen SearchBar
@@ -49,7 +47,7 @@ const SearchBar = ({ onSearch }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []); // Array dependensi kosong agar efek ini hanya berjalan sekali
+  }, []);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -74,16 +72,20 @@ const SearchBar = ({ onSearch }) => {
   };
   
   const handleRecommendationClick = (city) => {
-    setQuery(city);
-    onSearch(city);
+    // Reset query dan recommendations setelah memilih dari rekomendasi
+    setQuery('');
     setRecommendations([]);
+    onSearch(city);
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (query) {
-      onSearch(query);
+    if (query.trim()) {
+      const searchQuery = query.trim();
+      // Reset query dan recommendations setelah search
+      setQuery('');
       setRecommendations([]);
+      onSearch(searchQuery);
     }
   };
 
