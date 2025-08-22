@@ -135,7 +135,7 @@ function App() {
                 currentData={weatherData.current} 
                 timezone={weatherData.timezone} 
               />
-              <HourlyForecast hourlyData={weatherData.hourly} />
+              <HourlyForecast hourlyData={weatherData.hourly} timezone={weatherData.timezone} />
               <DailyForecast dailyData={weatherData.daily} />
             </div>
           )}
