@@ -23,7 +23,7 @@ const ThemedLoader = ({ isOverlay = false }) => {
       </div>
       
       <p className={`mt-4 font-semibold ${isOverlay ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>
-        Memuat data cuaca...
+        Memuat data cuaca
       </p>
       
       {/* Loading dots sederhana */}
