@@ -22,7 +22,7 @@ const CloudAnimation = () => {
 
         {/* Awan 3 (Depan, paling cepat) */}
         <img
-            src="/cloud1.png"
+            src="/cloud3.png"
             alt=""
             className="absolute w-1/2 opacity-40 animate-slide-across-fast"
             style={{ top: '60%', animationDelay: '-25s' }}
