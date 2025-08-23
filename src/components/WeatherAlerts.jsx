@@ -9,16 +9,46 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
 
   const suggestions = [];
   const now = new Date();
-  // Menggunakan 'en-GB' untuk format 24 jam yang lebih konsisten
   const currentHour = parseInt(now.toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit' }), 10);
+
+  // --- DIPERTAJAM: Logika Peringatan Hujan & Angin ---
   
-  const upcomingHours = hourly
-    .filter(hour => parseInt(hour.datetime.split(':')[0], 10) >= currentHour)
-    .slice(0, 6);
+  // 1. Peringatan Hujan Lebat (dalam 6 jam ke depan, karena ini penting untuk diwaspadai)
+  const heavyRainHour = hourly.slice(0, 6).find(hour => hour.precipprob > 60 && hour.precip > 2);
+  if (heavyRainHour) {
+    suggestions.push({
+      id: 'heavy-rain',
+      type: 'danger',
+      icon: <FiAlertTriangle className="text-red-500" />,
+      message: `Hujan lebat diprediksi sekitar pukul ${heavyRainHour.datetime.slice(0, 5)}. Waspada potensi genangan.`,
+    });
+  }
 
-  // --- LOGIKA CUACA EKSTREM, HUJAN, & ANGIN (Tidak ada perubahan) ---
+  // 2. Peringatan Hujan Akan Segera Turun (hanya jika belum ada peringatan hujan lebat)
+  // Fokus pada 2 jam ke depan untuk relevansi maksimal.
+  const rainWithinTwoHours = hourly.slice(0, 2).find(hour => hour.precipprob > 50);
+  if (rainWithinTwoHours && !heavyRainHour) {
+    suggestions.push({
+      id: 'rain-soon',
+      type: 'info',
+      icon: <FiUmbrella className="text-blue-500" />,
+      message: `Hujan diprediksi akan turun dalam 1-2 jam ke depan. Siapkan payung.`,
+    });
+  }
 
-  // 1. Peringatan Cuaca Ekstrem dari API
+  // 3. Peringatan Angin Kencang Segera Terjadi
+  // Fokus pada 3 jam ke depan dan tingkatkan ambang batas kecepatan angin.
+  const strongWindSoon = hourly.slice(0, 3).find(hour => hour.windspeed > 35);
+  if (strongWindSoon) {
+    suggestions.push({
+      id: 'strong-wind-soon',
+      type: 'warning',
+      icon: <FiWind className="text-orange-500" />,
+      message: `Angin kencang (~${Math.round(strongWindSoon.windspeed)} km/j) akan terjadi dalam 3 jam ke depan.`,
+    });
+  }
+  
+  // --- Peringatan dari API (Tidak berubah) ---
   const apiAlerts = (alerts || []).map(alert => ({
     id: `api-${alert.event}`,
     type: 'danger',
@@ -27,62 +57,24 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
   }));
   suggestions.push(...apiAlerts);
 
-  // 2. Analisis Potensi Hujan & Angin
-  const heavyRainHour = upcomingHours.find(hour => hour.precipprob > 60 && hour.precip > 5);
-  const lightRainHour = upcomingHours.find(hour => hour.precipprob > 50);
-  const strongWindHour = upcomingHours.find(hour => hour.windspeed > 30);
 
-  if (heavyRainHour) {
-    suggestions.push({
-      id: 'heavy-rain',
-      type: 'danger',
-      icon: <FiAlertTriangle className="text-red-500" />,
-      message: `Hujan sangat lebat diprediksi terjadi sekitar pukul ${heavyRainHour.datetime.slice(0, 5)}. Waspada potensi genangan.`,
-    });
-  } else if (lightRainHour) {
-    suggestions.push({
-      id: 'light-rain',
-      type: 'info',
-      icon: <FiUmbrella className="text-blue-500" />,
-      message: 'Ada kemungkinan hujan dalam beberapa jam ke depan. Sebaiknya siapkan payung.',
-    });
-  }
-
-  if (strongWindHour) {
-    suggestions.push({
-      id: 'strong-wind',
-      type: 'warning',
-      icon: <FiWind className="text-orange-500" />,
-      message: `Angin kencang dengan kecepatan ${Math.round(strongWindHour.windspeed)} km/j diprediksi terjadi.`,
-    });
-  }
-
-  // --- PERBAIKAN: LOGIKA UV INDEX YANG DISEMPURNAKAN ---
-  // Logika lama yang hanya memeriksa jam tertentu telah diganti.
-  // Logika baru ini lebih proaktif dengan memeriksa prakiraan UV tertinggi untuk hari ini.
-
+  // --- Logika UV Index (Sudah relevan, tidak diubah) ---
   const isRainingNow = current.icon.includes('rain') || current.icon.includes('showers') || current.icon.includes('thunder');
-
-  // 1. Cari tahu UV maksimum dari data per jam untuk hari ini (fokus pada jam 9 pagi - 5 sore)
   const maxUvToday = hourly
-    .slice(0, 24) // Ambil data 24 jam ke depan untuk mencakup sisa hari ini
+    .slice(0, 24)
     .filter(hour => {
       const hourOfDay = parseInt(hour.datetime.split(':')[0], 10);
-      return hourOfDay >= 9 && hourOfDay <= 17; // Jam relevan untuk UV tinggi
+      return hourOfDay >= 9 && hourOfDay <= 17;
     })
     .reduce((max, hour) => Math.max(max, hour.uvindex), 0);
 
-  // 2. Tampilkan peringatan UV jika:
-  //    - Belum lewat jam 5 sore (peringatan tidak relevan di malam hari).
-  //    - Saat ini tidak sedang hujan.
-  //    - Prakiraan UV maksimum hari ini cukup tinggi (>= 3).
   if (currentHour < 17 && !isRainingNow && maxUvToday >= 3) {
       if (maxUvToday >= 8) {
           suggestions.push({
               id: 'uv-forecast-extreme',
               type: 'danger',
               icon: <FiSun className="text-red-500" />,
-              message: `Puncak UV hari ini Sangat Ekstrem (${maxUvToday}). Wajib gunakan sunscreen SPF 50+ dan hindari paparan langsung.`,
+              message: `Puncak UV hari ini Sangat Ekstrem (${maxUvToday}). Wajib gunakan sunscreen SPF 50+ & hindari paparan langsung.`,
           });
       } else if (maxUvToday >= 6) {
           suggestions.push({
@@ -91,17 +83,17 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
               icon: <FiSun className="text-orange-500" />,
               message: `Puncak Indeks UV hari ini Tinggi (${maxUvToday}). Disarankan gunakan sunscreen SPF 30-50.`,
           });
-      } else { // Ini untuk kasus maxUvToday >= 3
+      } else {
           suggestions.push({
               id: 'uv-forecast-moderate',
               type: 'info',
               icon: <FiSun className="text-yellow-500" />,
-              message: `Indeks UV hari ini mencapai tingkat Sedang (${maxUvToday}). Pertimbangkan sunscreen jika beraktivitas di luar.`,
+              message: `Indeks UV hari ini Sedang (${maxUvToday}). Pertimbangkan sunscreen jika beraktivitas di luar.`,
           });
       }
   }
 
-  // Mencegah duplikasi alert dan memastikan hanya yang paling relevan yang tampil
+  // Mencegah duplikasi alert
   const uniqueAlerts = Array.from(new Set(suggestions.map(a => a.id)))
     .map(id => {
       return suggestions.find(a => a.id === id)

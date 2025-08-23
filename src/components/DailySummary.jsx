@@ -3,44 +3,62 @@ import React from 'react';
 import { FaRegNewspaper } from 'react-icons/fa';
 import { translateWeatherCondition } from '../utils/translations';
 
-// --- FUNGSI LOGIKA BARU YANG LEBIH CERDAS ---
+// --- FUNGSI LOGIKA AKURAT DENGAN GAYA BAHASA PROFESIONAL ---
+
+// Helper function untuk menemukan kondisi cuaca yang paling sering muncul dalam satu periode
+const getDominantCondition = (hours) => {
+  if (!hours || hours.length === 0) return null;
+
+  const conditionCounts = hours.reduce((acc, hour) => {
+    const condition = translateWeatherCondition(hour.conditions);
+    acc[condition] = (acc[condition] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.keys(conditionCounts).reduce((a, b) => 
+    conditionCounts[a] > conditionCounts[b] ? a : b
+  );
+};
+
 const generateSummary = (dayData, hourlyData) => {
   const maxTemp = Math.round(dayData.tempmax);
   const minTemp = Math.round(dayData.tempmin);
 
-  // 1. Analisis segmen waktu untuk menemukan kejadian penting
+  // 1. Analisis segmen waktu
   const morningHours = hourlyData.filter(h => parseInt(h.datetime.split(':')[0]) >= 6 && parseInt(h.datetime.split(':')[0]) < 12);
   const afternoonHours = hourlyData.filter(h => parseInt(h.datetime.split(':')[0]) >= 12 && parseInt(h.datetime.split(':')[0]) < 18);
   
-  // Menemukan kondisi pagi hari yang paling umum
-  const morningCondition = morningHours.length > 0 
-    ? translateWeatherCondition(morningHours[0].conditions).toLowerCase()
-    : translateWeatherCondition(dayData.conditions).toLowerCase();
+  // Menentukan kondisi pagi yang paling dominan
+  const dominantMorningCondition = getDominantCondition(morningHours) || translateWeatherCondition(dayData.conditions);
 
-  // 2. Mencari kejadian cuaca paling signifikan di siang/sore hari
+  // 2. Mencari kejadian cuaca signifikan di sore hari
   const afternoonThunder = afternoonHours.some(h => h.icon.includes('thunder'));
   const afternoonHeavyRain = afternoonHours.some(h => h.precipprob > 60 && h.precip > 2);
-  const afternoonLightRain = afternoonHours.some(h => h.precipprob > 40);
+  const afternoonLightRain = afternoonHours.some(h => h.precipprob > 45);
 
-  // 3. Membangun kalimat naratif
-  let summary = `Hari akan dimulai dengan cuaca ${morningCondition}, `;
-  summary += `dengan suhu tertinggi hari ini mencapai sekitar ${maxTemp}°C.`;
+  // 3. Membangun kalimat ringkasan yang baku dan profesional
+  const summaryParts = [];
 
-  // Menambahkan detail sore hari berdasarkan prioritas (petir > hujan lebat > hujan ringan)
+  // Kalimat Pagi & Suhu Maksimum
+  summaryParts.push(`Pagi hari akan didominasi oleh cuaca ${dominantMorningCondition.toLowerCase()}. Suhu maksimum hari ini diperkirakan mencapai ${maxTemp}°C.`);
+
+  // Kalimat Sore hari (berdasarkan prioritas)
   if (afternoonThunder) {
-    summary += " Waspada potensi badai petir di sore hari.";
+    summaryParts.push("Waspadai potensi badai petir pada sore hari.");
   } else if (afternoonHeavyRain) {
-    summary += " Hujan dengan intensitas sedang hingga lebat diperkirakan turun sore nanti.";
+    summaryParts.push("Hujan dengan intensitas lebat diperkirakan akan turun pada sore hari.");
   } else if (afternoonLightRain) {
-    summary += " Ada kemungkinan hujan ringan di sore hari.";
+    summaryParts.push("Terdapat kemungkinan hujan ringan pada sore hari.");
+  } else {
+    summaryParts.push("Kondisi cuaca pada sore hari diperkirakan akan cerah.");
   }
 
-  // Menambahkan info suhu malam jika ada perbedaan signifikan
+  // Kalimat Suhu Minimum di Malam Hari
   if (maxTemp - minTemp > 5) {
-    summary += ` Suhu akan mendingin hingga ${minTemp}°C di malam hari.`;
+    summaryParts.push(`Suhu udara akan menurun hingga ${minTemp}°C pada malam hari.`);
   }
 
-  return summary;
+  return summaryParts.join(' ');
 };
 
 const DailySummary = ({ dayData, hourlyData }) => {
@@ -55,7 +73,7 @@ const DailySummary = ({ dayData, hourlyData }) => {
       </div>
       <div>
         <h4 className="font-bold text-gray-800 dark:text-gray-200">Ringkasan Hari Ini</h4>
-        <p className="text-gray-600 dark:text-gray-300">{summaryText}</p>
+        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{summaryText}</p>
       </div>
     </div>
   );
