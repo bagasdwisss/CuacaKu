@@ -1,9 +1,8 @@
 // src/components/HourlyChart.jsx
-import React, { useState, useEffect } from 'react'; // PERUBAHAN 1: Menambahkan useState dan useEffect
+import React, { useState, useEffect, useRef } from 'react'; // PERUBAHAN 1: Menambahkan useRef
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, ReferenceArea } from 'recharts';
 import { translateWeatherCondition } from '../utils/translations';
 
-// Custom Tooltip tidak diubah, karena sudah menampilkan data peluang hujan
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -20,24 +19,21 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const HourlyChart = ({ data, dayData }) => {
-  // PERUBAHAN 2: Menambahkan state untuk interval sumbu-X yang dinamis
   const [xAxisInterval, setXAxisInterval] = useState(2);
+  const chartRef = useRef(null); // PERUBAHAN 2: Membuat ref untuk container chart
 
-  // PERUBAHAN 3: Menambahkan logika untuk mendeteksi ukuran layar
   useEffect(() => {
     const handleResize = () => {
-      // Jika lebar layar di bawah 640px (standar HP)
       if (window.innerWidth < 640) {
-        setXAxisInterval(4); // Tampilkan label setiap 5 jam
+        setXAxisInterval(4);
       } else {
-        setXAxisInterval(2); // Tampilkan label setiap 3 jam di layar lebih besar
+        setXAxisInterval(2);
       }
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // Panggil saat komponen pertama kali dimuat
+    handleResize();
 
-    // Membersihkan event listener
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -45,7 +41,6 @@ const HourlyChart = ({ data, dayData }) => {
     return null;
   }
 
-  // Logika pemrosesan data tidak diubah, agar data hujan tetap ada untuk tooltip
   const next24HoursData = data.slice(0, 24);
   const chartData = next24HoursData.map(hour => ({
     time: hour.datetime.slice(0, 5),
@@ -55,7 +50,6 @@ const HourlyChart = ({ data, dayData }) => {
     Kondisi: translateWeatherCondition(hour.conditions),
   }));
 
-  // Semua logika cerdas Anda (min/max temp, sunrise/sunset) dipertahankan
   const { minTemp, maxTemp } = next24HoursData.reduce((acc, hour) => ({
       minTemp: Math.min(acc.minTemp, hour.temp),
       maxTemp: Math.max(acc.maxTemp, hour.temp),
@@ -69,28 +63,32 @@ const HourlyChart = ({ data, dayData }) => {
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
       <h3 className="text-xl font-bold mb-4">Prakiraan 24 Jam ke Depan</h3>
-      <div style={{ width: '100%', height: 300 }}>
+      {/* PERUBAHAN 3: Memasang ref pada div pembungkus chart */}
+      <div ref={chartRef} style={{ width: '100%', height: 300 }}>
         <ResponsiveContainer>
-          <ComposedChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+            // PERUBAHAN 4: Menambahkan event handler onTouchEnd
+            onTouchEnd={() => {
+              if (chartRef.current) {
+                // Memicu event mouseleave secara manual untuk menyembunyikan tooltip
+                const event = new MouseEvent('mouseleave', { bubbles: true });
+                chartRef.current.dispatchEvent(event);
+              }
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-            {/* PERUBAHAN 4: Menerapkan interval dinamis untuk responsivitas */}
             <XAxis dataKey="time" interval={xAxisInterval} />
             <YAxis yAxisId="left" unit="°C" domain={['dataMin - 2', 'dataMax + 2']} />
             
-            {/* PERUBAHAN 5: Sumbu-Y untuk hujan dihapus */}
-            {/* <YAxis yAxisId="right" orientation="right" unit="%" domain={[0, 100]} /> */}
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#a78bfa', strokeWidth: 1, strokeDasharray: '3 3' }}/>
             
-            <Tooltip content={<CustomTooltip />} />
-            
-            {/* Latar belakang malam hari dipertahankan */}
             <ReferenceArea x1={sunsetTime} x2={chartData[23].time} yAxisId="left" fill="#2d3748" fillOpacity={0.2} ifOverflow="hidden" />
             <ReferenceArea x1={chartData[0].time} x2={sunriseTime} yAxisId="left" fill="#2d3748" fillOpacity={0.2} ifOverflow="hidden" />
 
-            {/* PERUBAHAN 6: Visual Bar Chart untuk hujan dihapus */}
-            {/* <Bar yAxisId="right" dataKey="Peluang Hujan" barSize={20} fill="#3b82f6" fillOpacity={0.5} /> */}
             <Line yAxisId="left" type="monotone" dataKey="Suhu" stroke="#f97316" strokeWidth={3} dot={false} />
 
-            {/* Penanda suhu min/maks dipertahankan */}
             {maxTempData && <ReferenceDot yAxisId="left" x={maxTempData.time} y={maxTempData.Suhu} r={5} fill="#ef4444" stroke="white" />}
             {minTempData && <ReferenceDot yAxisId="left" x={minTempData.time} y={minTempData.Suhu} r={5} fill="#3b82f6" stroke="white" />}
 
