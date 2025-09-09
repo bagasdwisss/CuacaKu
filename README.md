@@ -1,13 +1,6 @@
-<div align="center">
-<img src="logo.png" alt="Logo CuacaKu" width="100"/>
+
 <h1><b>CuacaKu 🌦️</b></h1>
 <p>Aplikasi prakiraan cuaca canggih yang dibangun dengan React, Vite, dan Tailwind CSS.</p>
-
-<p>
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/React-20232A%3Fstyle%3Dfor-the-badge%26logo%3Dreact%26logoColor%3D61DAFB" alt="React Badge"/>
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/Vite-B73BFE%3Fstyle%3Dfor-the-badge%26logo%3Dvite%26logoColor%3DFFD62E" alt="Vite Badge"/>
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/Tailwind_CSS-38B2AC%3Fstyle%3Dfor-the-badge%26logo%3Dtailwind-css%26logoColor%3Dwhite" alt="Tailwind CSS Badge"/>
-</p>
 
 <p>
 <a href="#✨-fitur-utama"><strong>Fitur Utama</strong></a> ·
@@ -18,7 +11,7 @@
 </div>
 
 <div align="center">
-<a href="https://URL_DEMO_VERCEL_ANDA.vercel.app/" target="_blank">
+<a href="https://cuaca-ku-sevens.vercel.app/" target="_blank">
 <img src="URL_SCREENSHOT_ATAU_GIF_DEMO_ANDA.gif" alt="Demo Aplikasi CuacaKu" />
 <br/>
 <strong>🚀 Lihat Demo Langsung 🚀</strong>
