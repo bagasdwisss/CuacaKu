@@ -1,17 +1,8 @@
 // src/utils/themeService.js
+import { isDaytime } from './timeUtils';
 
-// Fungsi ini sekarang HANYA menentukan tema terang atau gelap
+// Menentukan tema otomatis (terang saat siang, gelap saat malam) di lokasi yang sedang dilihat
 export const getThemeAndBackground = (weatherData) => {
-  const { current, timezone } = weatherData;
-  const now = new Date();
-  
-  const localTimeHour = parseInt(now.toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
-  const sunriseHour = parseInt(new Date(current.sunriseEpoch * 1000).toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
-  const sunsetHour = parseInt(new Date(current.sunsetEpoch * 1000).toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
-  
-  const isDay = localTimeHour >= sunriseHour && localTimeHour < sunsetHour;
-  const theme = isDay ? 'light' : 'dark';
-
-  // Kita tidak lagi mengembalikan backgroundClass dari sini
+  const theme = isDaytime(weatherData.current) ? 'light' : 'dark';
   return { theme };
 };

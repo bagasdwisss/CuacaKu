@@ -1,94 +1,120 @@
 import axios from 'axios';
+import { geocodePlace, reverseGeocode, cleanPlaceName, isCoordinates, userError } from './geoService';
 
 const VC_API_KEY = import.meta.env.VITE_VISUALCROSSING_API_KEY;
 const AQI_API_KEY = import.meta.env.VITE_AQI_API_KEY;
-const GEO_API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY; // Key untuk Geocoding
 
 const VC_BASE_URL = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/';
 const AQI_BASE_URL = 'https://api.waqi.info/feed/geo:';
-const GEOCODING_URL = 'https://api.geoapify.com/v1/geocode/search'; // URL Geocoding baru (HTTPS)
 
-const convertAqiToScale = (aqiValue) => {
-  if (aqiValue <= 50) return 1; if (aqiValue <= 100) return 2;
-  if (aqiValue <= 150) return 3; if (aqiValue <= 200) return 4;
-  if (aqiValue > 200) return 5; return null;
-};
+const isValidCoord = (lat, lon) =>
+  Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
 
-const isCoordinates = (str) => /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(str);
-
-export const getWeatherData = async (location) => {
-  let latitude, longitude;
-  let verifiedCityName, verifiedCountryName;
-
-  // --- Langkah 1: Dapatkan Koordinat yang Akurat dengan Geoapify ---
-  if (!isCoordinates(location)) {
-    const geoResponse = await axios.get(GEOCODING_URL, {
-      params: { text: location, limit: 1, apiKey: GEO_API_KEY },
-    });
-    if (!geoResponse.data || !geoResponse.data.features || geoResponse.data.features.length === 0) {
-      throw new Error(`Lokasi "${location}" tidak dapat ditemukan.`);
-    }
-    const result = geoResponse.data.features[0].properties;
-    latitude = result.lat;
-    longitude = result.lon;
-    verifiedCityName = result.city;
-    verifiedCountryName = result.country;
-  } else {
-    [latitude, longitude] = location.split(',').map(Number);
+// Target bisa berupa:
+//  - objek { name, country, lat, lon } (dari autocomplete / favorit / lokasi terakhir)
+//  - objek { name } tanpa koordinat (favorit versi lama)
+//  - string "lat,lon" (dari tombol deteksi lokasi)
+//  - string nama tempat (diketik bebas)
+const resolvePlace = async (target, signal) => {
+  if (target && typeof target === 'object' && typeof target.lat === 'number' && typeof target.lon === 'number') {
+    if (!isValidCoord(target.lat, target.lon)) throw userError('Koordinat lokasi tidak valid.');
+    return { name: target.name || null, country: target.country || null, lat: target.lat, lon: target.lon };
   }
 
-  // --- Langkah 2: Ambil Data Cuaca & AQI dengan Koordinat Terverifikasi ---
-  const vcUrl = `${VC_BASE_URL}${latitude},${longitude}?unitGroup=metric&include=hours,current,alerts&key=${VC_API_KEY}&contentType=json`;
-  const aqiUrl = `${AQI_BASE_URL}${latitude};${longitude}/?token=${AQI_API_KEY}`;
+  const text = (typeof target === 'string' ? target : target?.name || '').trim();
+  if (!text) throw userError('Lokasi tidak valid.');
 
-  const [weatherResponse, aqiResponse] = await Promise.all([
-    axios.get(vcUrl).catch(err => { console.error("VC API Error:", err); return null; }),
-    axios.get(aqiUrl).catch(err => { console.error("AQI API Error:", err); return null; })
+  if (isCoordinates(text)) {
+    const [lat, lon] = text.split(',').map(Number);
+    if (!isValidCoord(lat, lon)) throw userError('Koordinat lokasi tidak valid.');
+    return { name: null, country: null, lat, lon };
+  }
+
+  return geocodePlace(text, { signal });
+};
+
+// Request opsional: bila gagal (selain dibatalkan) kembalikan null agar tidak menggagalkan seluruh data
+const optionalRequest = async (promiseFactory, label) => {
+  try {
+    return await promiseFactory();
+  } catch (err) {
+    if (axios.isCancel(err)) throw err;
+    console.error(`${label} Error:`, err);
+    return null;
+  }
+};
+
+export const getWeatherData = async (target, { signal } = {}) => {
+  // --- Langkah 1: Tentukan koordinat ---
+  const place = await resolvePlace(target, signal);
+  const { lat, lon } = place;
+
+  // --- Langkah 2: Ambil cuaca, AQI, dan (bila perlu) nama tempat secara paralel ---
+  const needsReverse = !place.name;
+  const [weatherResponse, aqiResponse, reverse] = await Promise.all([
+    optionalRequest(
+      () =>
+        axios.get(`${VC_BASE_URL}${lat},${lon}`, {
+          params: { unitGroup: 'metric', include: 'hours,current,alerts', key: VC_API_KEY, contentType: 'json' },
+          signal,
+        }),
+      'VC API'
+    ),
+    optionalRequest(() => axios.get(`${AQI_BASE_URL}${lat};${lon}/`, { params: { token: AQI_API_KEY }, signal }), 'AQI API'),
+    needsReverse ? optionalRequest(() => reverseGeocode(lat, lon, { signal }), 'Reverse Geocoding') : Promise.resolve(null),
   ]);
-  
-  if (!weatherResponse || !weatherResponse.data) {
-    throw new Error("Gagal mengambil data cuaca utama.");
+
+  if (!weatherResponse || !weatherResponse.data || !weatherResponse.data.days?.length) {
+    throw userError('Gagal mengambil data cuaca utama.');
   }
   const weatherData = weatherResponse.data;
 
-  // --- Langkah 3: Proses Data AQI dan Nama Lokasi Cadangan ---
+  if (import.meta.env.DEV) {
+    // Pantau penggunaan kuota Visual Crossing (batas gratis: 1.000 record/hari)
+    console.info('[CuacaKu] Visual Crossing queryCost:', weatherData.queryCost);
+  }
+
+  // --- Langkah 3: AQI (nilai mentah 0-500) dan nama kota cadangan dari stasiun AQI ---
   let aqiValue = null;
   let aqiCityName = null;
-  if (aqiResponse && aqiResponse.data && aqiResponse.data.status === 'ok' && aqiResponse.data.data) {
-    if (aqiResponse.data.data.aqi) aqiValue = convertAqiToScale(aqiResponse.data.data.aqi);
-    if (aqiResponse.data.data.city && aqiResponse.data.data.city.name) aqiCityName = aqiResponse.data.data.city.name;
+  if (aqiResponse?.data?.status === 'ok' && aqiResponse.data.data) {
+    const rawAqi = Number(aqiResponse.data.data.aqi);
+    if (Number.isFinite(rawAqi)) aqiValue = rawAqi;
+    aqiCityName = aqiResponse.data.data.city?.name || null;
   }
 
-  // --- Langkah 4: Logika Final untuk Menentukan Nama Lokasi ---
-  let finalCityName = verifiedCityName;
-  let finalCountryName = verifiedCountryName;
+  // --- Langkah 4: Tentukan nama lokasi final ---
+  let finalCityName = place.name || reverse?.name || null;
+  let finalCountryName = place.country || reverse?.country || null;
 
-  if (!finalCityName) {
-    if (aqiCityName) {
-      const parts = aqiCityName.split(',').map(part => part.trim());
-      finalCityName = parts[0];
-      if (parts.length > 1 && isNaN(parts[parts.length - 1])) finalCountryName = parts[parts.length - 1];
-    } else if (weatherData.resolvedAddress) {
-      const addressParts = weatherData.resolvedAddress.split(',').map(part => part.trim());
-      finalCityName = addressParts[0];
-      if (addressParts.length > 1 && isNaN(addressParts[parts.length - 1])) finalCountryName = addressParts[parts.length - 1];
-    } else {
-      finalCityName = location;
-    }
+  if (!finalCityName && aqiCityName) {
+    const parts = aqiCityName.split(',').map((part) => part.trim());
+    finalCityName = parts[0];
+    const last = parts[parts.length - 1];
+    if (!finalCountryName && parts.length > 1 && Number.isNaN(Number(last))) finalCountryName = last;
   }
 
-  // ===== PERBAIKAN FINAL DI SINI: Membersihkan nama kota dengan lebih baik =====
-  // Regex ini sekarang juga akan menghapus "Special Capital Region of" dan variasi lainnya
-  if (finalCityName) {
-    finalCityName = finalCityName.replace(/^(city of|kota|kabupaten|regency of|special capital region of)\s/i, '').trim();
+  if (!finalCityName && weatherData.resolvedAddress && !isCoordinates(weatherData.resolvedAddress)) {
+    const parts = weatherData.resolvedAddress.split(',').map((part) => part.trim());
+    finalCityName = parts[0];
+    const last = parts[parts.length - 1];
+    if (!finalCountryName && parts.length > 1 && Number.isNaN(Number(last))) finalCountryName = last;
   }
+
+  finalCityName = cleanPlaceName(finalCityName) || 'Lokasi Anda';
+
+  // --- Langkah 5: Susun data jam ---
+  const days = weatherData.days;
+  const hoursToday = days[0].hours || [];
+  const hoursAll = [...hoursToday, ...(days[1]?.hours || [])]; // hari ini + besok, untuk "24 jam ke depan"
 
   return {
-    location: { name: finalCityName, country: finalCountryName },
+    location: { name: finalCityName, country: finalCountryName, lat, lon },
     timezone: weatherData.timezone,
     current: { ...weatherData.currentConditions, aqi: aqiValue },
-    hourly: weatherData.days[0].hours,
-    daily: weatherData.days,
+    hoursToday,
+    hoursAll,
+    daily: days,
     alerts: weatherData.alerts || [],
   };
 };
