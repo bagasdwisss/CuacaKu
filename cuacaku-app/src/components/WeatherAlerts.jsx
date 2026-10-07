@@ -1,20 +1,22 @@
 // src/components/WeatherAlerts.jsx
 import React from 'react';
 import { FiSun, FiUmbrella, FiAlertTriangle, FiWind } from 'react-icons/fi';
+import { useSettings } from '../context/settingsContext';
+import { getLocalHour } from '../utils/timeUtils';
 
-const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
-  if (!current || !hourly || !timezone) {
+// upcoming: jam-jam mulai dari SEKARANG, hoursToday: seluruh jam hari ini
+const WeatherAlerts = ({ alerts, current, upcoming, hoursToday, timezone }) => {
+  const { formatWind } = useSettings();
+
+  if (!current || !upcoming || !hoursToday || !timezone) {
     return null;
   }
 
   const suggestions = [];
-  const now = new Date();
-  const currentHour = parseInt(now.toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit' }), 10);
+  const currentHour = getLocalHour(timezone);
 
-  // --- DIPERTAJAM: Logika Peringatan Hujan & Angin ---
-
-  // 1. Peringatan Hujan Lebat (dalam 6 jam ke depan, karena ini penting untuk diwaspadai)
-  const heavyRainHour = hourly.slice(0, 6).find(hour => hour.precipprob > 60 && hour.precip > 2);
+  // 1. Hujan lebat dalam 6 jam ke depan
+  const heavyRainHour = upcoming.slice(0, 6).find(hour => hour.precipprob > 60 && hour.precip > 2);
   if (heavyRainHour) {
     suggestions.push({
       id: 'heavy-rain',
@@ -24,9 +26,8 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
     });
   }
 
-  // 2. Peringatan Hujan Akan Segera Turun (hanya jika belum ada peringatan hujan lebat)
-  // Fokus pada 2 jam ke depan untuk relevansi maksimal.
-  const rainWithinTwoHours = hourly.slice(0, 2).find(hour => hour.precipprob > 50);
+  // 2. Hujan akan segera turun (hanya jika belum ada peringatan hujan lebat)
+  const rainWithinTwoHours = upcoming.slice(0, 2).find(hour => hour.precipprob > 50);
   if (rainWithinTwoHours && !heavyRainHour) {
     suggestions.push({
       id: 'rain-soon',
@@ -36,19 +37,18 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
     });
   }
 
-  // 3. Peringatan Angin Kencang Segera Terjadi
-  // Fokus pada 3 jam ke depan dan tingkatkan ambang batas kecepatan angin.
-  const strongWindSoon = hourly.slice(0, 3).find(hour => hour.windspeed > 35);
+  // 3. Angin kencang dalam 3 jam ke depan
+  const strongWindSoon = upcoming.slice(0, 3).find(hour => hour.windspeed > 35);
   if (strongWindSoon) {
     suggestions.push({
       id: 'strong-wind-soon',
       type: 'warning',
       icon: <FiWind className="text-orange-500" />,
-      message: `Angin kencang (~${Math.round(strongWindSoon.windspeed)} km/j) akan terjadi dalam 3 jam ke depan.`,
+      message: `Angin kencang (~${formatWind(strongWindSoon.windspeed)}) akan terjadi dalam 3 jam ke depan.`,
     });
   }
 
-  // --- Peringatan dari API (Tidak berubah) ---
+  // --- Peringatan dari API ---
   const apiAlerts = (alerts || []).map(alert => ({
     id: `api-${alert.event}`,
     type: 'danger',
@@ -57,11 +57,9 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
   }));
   suggestions.push(...apiAlerts);
 
-
-  // --- Logika UV Index (Sudah relevan, tidak diubah) ---
+  // --- Indeks UV ---
   const isRainingNow = current.icon.includes('rain') || current.icon.includes('showers') || current.icon.includes('thunder');
-  const maxUvToday = hourly
-    .slice(0, 24)
+  const maxUvToday = hoursToday
     .filter(hour => {
       const hourOfDay = parseInt(hour.datetime.split(':')[0], 10);
       return hourOfDay >= 9 && hourOfDay <= 17;
@@ -95,9 +93,7 @@ const WeatherAlerts = ({ alerts, current, hourly, timezone }) => {
 
   // Mencegah duplikasi alert
   const uniqueAlerts = Array.from(new Set(suggestions.map(a => a.id)))
-    .map(id => {
-      return suggestions.find(a => a.id === id)
-    });
+    .map(id => suggestions.find(a => a.id === id));
 
   if (uniqueAlerts.length === 0) {
     return null;

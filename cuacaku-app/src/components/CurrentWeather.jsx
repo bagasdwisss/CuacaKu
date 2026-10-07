@@ -3,6 +3,8 @@ import React from 'react';
 import WeatherAnimation from './WeatherAnimation';
 import { getWeatherIcon } from '../utils/iconService';
 import { translateWeatherCondition } from '../utils/translations';
+import { isDaytime } from '../utils/timeUtils';
+import { useSettings } from '../context/settingsContext';
 import { WiSunrise, WiSunset } from 'react-icons/wi';
 
 // Helper fungsi untuk memilih background lokal di dalam komponen
@@ -27,8 +29,7 @@ const getLocalBackgroundClass = (icon, isDay) => {
   return `bg-gradient-to-br ${bgClass}`;
 };
 
-
-// Helper untuk Kualitas Udara (AQI)
+// Helper untuk Kualitas Udara (AQI mentah 0-500)
 const AQI_LEVELS = {
   1: { label: 'Baik', color: 'bg-green-500' },
   2: { label: 'Sedang', color: 'bg-yellow-500' },
@@ -38,7 +39,7 @@ const AQI_LEVELS = {
 };
 
 const getAQICategory = (aqi) => {
-  if (!aqi) return { label: 'N/A', color: 'bg-gray-400' };
+  if (aqi === null || aqi === undefined) return { label: 'N/A', color: 'bg-gray-400' };
   if (aqi <= 50) return AQI_LEVELS[1];
   if (aqi <= 100) return AQI_LEVELS[2];
   if (aqi <= 150) return AQI_LEVELS[3];
@@ -63,16 +64,11 @@ const getUVCategory = (uv) => {
   return UV_LEVELS.extreme;
 };
 
-
 const CurrentWeather = ({ data }) => {
   const { location, current, timezone } = data;
+  const { formatTemp, formatWind } = useSettings();
 
-  const now = new Date();
-  const localTimeHour = parseInt(now.toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
-  const sunriseHour = parseInt(new Date(current.sunriseEpoch * 1000).toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
-  const sunsetHour = parseInt(new Date(current.sunsetEpoch * 1000).toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', hour12: false }));
-  const isDay = localTimeHour >= sunriseHour && localTimeHour < sunsetHour;
-
+  const isDay = isDaytime(current);
   const backgroundClass = getLocalBackgroundClass(current.icon, isDay);
   const aqiData = getAQICategory(current.aqi);
   const uvCategory = getUVCategory(current.uvindex);
@@ -82,6 +78,7 @@ const CurrentWeather = ({ data }) => {
     day: 'numeric', hour: '2-digit', minute: '2-digit',
     timeZone: timezone,
   };
+  const clock = { hour: '2-digit', minute: '2-digit', timeZone: timezone };
 
   return (
     <div className={`relative p-6 rounded-lg shadow-lg overflow-hidden transition-all duration-1000 text-white ${backgroundClass}`}>
@@ -94,20 +91,29 @@ const CurrentWeather = ({ data }) => {
       <div className="relative z-10">
         <div className="flex flex-col sm:flex-row justify-between items-start">
           <div>
-            <h2 className="text-2xl font-bold">{location.name}{location.country && location.name.toLowerCase() !== location.country.toLowerCase() ? `, ${location.country}` : ''}</h2>
+            <h2 className="text-2xl font-bold">
+              {location.name}
+              {location.country && location.name.toLowerCase() !== location.country.toLowerCase() ? `, ${location.country}` : ''}
+            </h2>
             <p className="opacity-80">{new Date().toLocaleString('id-ID', timeFormatOptions)}</p>
             <div className="flex items-center mt-4">
-              <div className="">{getWeatherIcon(current.icon)}</div>
+              <div>{getWeatherIcon(current.icon)}</div>
               <div className="ml-4">
-                <p className="text-5xl font-semibold">{Math.round(current.temp)}°C</p>
-                <p className="text-sm opacity-80 -mt-1">Terasa seperti {Math.round(current.feelslike)}°C</p>
+                <p className="text-5xl font-semibold">{formatTemp(current.temp)}</p>
+                <p className="text-sm opacity-80 -mt-1">Terasa seperti {formatTemp(current.feelslike)}</p>
                 <p className="text-lg capitalize mt-2">{translateWeatherCondition(current.conditions)}</p>
               </div>
             </div>
           </div>
           <div className="mt-6 sm:mt-0 text-left sm:text-right">
-            <div className="flex items-center justify-start sm:justify-end space-x-4 mb-2"><WiSunrise size={40} className="text-yellow-300" /><p>{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}</p></div>
-            <div className="flex items-center justify-start sm:justify-end space-x-4"><WiSunset size={40} className="text-orange-300" /><p>{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}</p></div>
+            <div className="flex items-center justify-start sm:justify-end space-x-4 mb-2">
+              <WiSunrise size={40} className="text-yellow-300" />
+              <p>{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</p>
+            </div>
+            <div className="flex items-center justify-start sm:justify-end space-x-4">
+              <WiSunset size={40} className="text-orange-300" />
+              <p>{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</p>
+            </div>
           </div>
         </div>
 
@@ -118,15 +124,15 @@ const CurrentWeather = ({ data }) => {
           </div>
           <div>
             <p className="opacity-80">Kelembapan</p>
-            <p className="font-bold text-lg">{current.humidity}%</p>
+            <p className="font-bold text-lg">{Math.round(current.humidity)}%</p>
           </div>
           <div>
             <p className="opacity-80">Kecepatan Angin</p>
-            <p className="font-bold text-lg">{current.windspeed} km/j</p>
+            <p className="font-bold text-lg">{formatWind(current.windspeed)}</p>
           </div>
           <div>
             <p className="opacity-80">Indeks Udara (AQI)</p>
-            <p className={`font-bold text-lg px-2 py-1 rounded-full text-white ${aqiData.color}`}>{aqiData.label} ({current.aqi || 'N/A'})</p>
+            <p className={`font-bold text-lg px-2 py-1 rounded-full text-white ${aqiData.color}`}>{aqiData.label} ({current.aqi ?? 'N/A'})</p>
           </div>
         </div>
       </div>
