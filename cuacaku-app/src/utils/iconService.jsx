@@ -1,4 +1,3 @@
-// src/utils/iconService.jsx
 import React from 'react';
 import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm, WiFog, WiNightClear, WiDayCloudy, WiRainMix, WiShowers, WiCloudyGusts, WiDayHaze } from 'react-icons/wi';
 
