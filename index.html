@@ -3,9 +3,17 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/logo.png" />
+  <link rel="icon" type="image/png" href="/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>CuacaKu</title>
+  <script>
+    // Tangani otomatis bila browser/service worker meminta chunk JS versi lama setelah deployment baru
+    window.addEventListener('vite:preloadError', (event) => {
+      event.preventDefault();
+      window.location.reload();
+    });
+  </script>
 </head>
 
 <body>
