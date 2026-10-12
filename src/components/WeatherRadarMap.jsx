@@ -7,11 +7,14 @@ import { FaPlay, FaPause, FaRedo, FaMapMarkedAlt } from 'react-icons/fa';
 import { useSettings } from '../context/settingsContext';
 
 const RAINVIEWER_API = 'https://api.rainviewer.com/public/weather-maps.json';
+const BASEMAP_LIGHT = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const BASEMAP_DARK = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 
 const WeatherRadarMap = ({ location }) => {
   const { themeMode } = useSettings();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const baseLayerRef = useRef(null);
   const radarLayerRef = useRef(null);
   const markerRef = useRef(null);
 
@@ -54,12 +57,10 @@ const WeatherRadarMap = ({ location }) => {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    if (!mapInstanceRef.current) {
-      const isDark = themeMode === 'dark' || document.documentElement.classList.contains('dark');
-      const basemapUrl = isDark
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const isDark = themeMode === 'dark' || document.documentElement.classList.contains('dark');
+    const basemapUrl = isDark ? BASEMAP_DARK : BASEMAP_LIGHT;
 
+    if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
         center: [lat, lon],
         zoom: 8,
@@ -69,10 +70,11 @@ const WeatherRadarMap = ({ location }) => {
         attributionControl: false,
       });
 
-      L.tileLayer(basemapUrl, {
-        maxZoom: 19,
-        subdomains: 'abcd',
+      const baseLayer = L.tileLayer(basemapUrl, {
+        maxZoom: 18,
+        subdomains: isDark ? [] : 'abc',
       }).addTo(map);
+      baseLayerRef.current = baseLayer;
 
       // Custom Glowing User Marker
       const pinIcon = L.divIcon({
@@ -93,6 +95,16 @@ const WeatherRadarMap = ({ location }) => {
       mapInstanceRef.current = map;
       markerRef.current = marker;
     } else {
+      // Update basemap jika tema berganti
+      if (baseLayerRef.current) {
+        mapInstanceRef.current.removeLayer(baseLayerRef.current);
+      }
+      const newBase = L.tileLayer(basemapUrl, {
+        maxZoom: 18,
+        subdomains: isDark ? [] : 'abc',
+      }).addTo(mapInstanceRef.current);
+      baseLayerRef.current = newBase;
+
       // Pan ke lokasi baru jika koordinat berubah
       mapInstanceRef.current.setView([lat, lon], 8);
       if (markerRef.current) {
@@ -106,6 +118,7 @@ const WeatherRadarMap = ({ location }) => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        baseLayerRef.current = null;
       }
     };
   }, [lat, lon, cityName, themeMode]);
