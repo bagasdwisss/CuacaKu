@@ -15,6 +15,9 @@ import ActivityIndex from './components/ActivityIndex';
 import DailySummary from './components/DailySummary';
 import ClothingAdvice from './components/ClothingAdvice';
 import WeatherDetails from './components/WeatherDetails';
+import HydrationCalculator from './components/HydrationCalculator';
+import WeekendPlanner from './components/WeekendPlanner';
+import WeatherRadarMap from './components/WeatherRadarMap';
 import SettingsMenu from './components/SettingsMenu';
 import UpdateStatus from './components/UpdateStatus';
 import Toast from './components/Toast';
@@ -226,6 +229,9 @@ function App() {
               <DailySummary dayData={weatherData.daily[0]} hourlyData={weatherData.hoursToday} />
               <ClothingAdvice current={weatherData.current} upcoming={upcoming} />
               <WeatherDetails current={weatherData.current} today={weatherData.daily[0]} />
+              <HydrationCalculator current={weatherData.current} />
+              <WeatherRadarMap location={weatherData.location} />
+              <WeekendPlanner dailyData={weatherData.daily} timezone={weatherData.timezone} />
               <ActivityIndex
                 dailyData={weatherData.daily}
                 currentData={weatherData.current}
