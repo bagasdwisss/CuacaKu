@@ -14,6 +14,7 @@ const WeatherAlerts = ({ alerts, current, upcoming, hoursToday, timezone }) => {
 
   const suggestions = [];
   const currentHour = getLocalHour(timezone);
+  const isRainingNow = current.icon.includes('rain') || current.icon.includes('showers') || current.icon.includes('thunder');
 
   // 1. Hujan lebat dalam 6 jam ke depan
   const heavyRainHour = upcoming.slice(0, 6).find(hour => hour.precipprob > 60 && hour.precip > 2);
@@ -26,14 +27,15 @@ const WeatherAlerts = ({ alerts, current, upcoming, hoursToday, timezone }) => {
     });
   }
 
-  // 2. Hujan akan segera turun (hanya jika belum ada peringatan hujan lebat)
+  // 2. Hujan akan segera turun (hanya jika belum ada peringatan hujan lebat dan belum hujan sekarang)
   const rainWithinTwoHours = upcoming.slice(0, 2).find(hour => hour.precipprob > 50);
-  if (rainWithinTwoHours && !heavyRainHour) {
+  if (rainWithinTwoHours && !heavyRainHour && !isRainingNow) {
+    const estimatedHour = rainWithinTwoHours.datetime.slice(0, 5);
     suggestions.push({
       id: 'rain-soon',
       type: 'info',
       icon: <FiUmbrella className="text-blue-500" />,
-      message: `Hujan diprediksi akan turun dalam 1-2 jam ke depan. Siapkan payung.`,
+      message: `Hujan diprediksi akan turun dalam 1-2 jam ke depan (diperkirakan sekitar pukul ${estimatedHour}). Siapkan payung.`,
     });
   }
 
@@ -58,7 +60,6 @@ const WeatherAlerts = ({ alerts, current, upcoming, hoursToday, timezone }) => {
   suggestions.push(...apiAlerts);
 
   // --- Indeks UV ---
-  const isRainingNow = current.icon.includes('rain') || current.icon.includes('showers') || current.icon.includes('thunder');
   const maxUvToday = hoursToday
     .filter(hour => {
       const hourOfDay = parseInt(hour.datetime.split(':')[0], 10);
