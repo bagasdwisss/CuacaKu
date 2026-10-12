@@ -45,27 +45,44 @@ const optionalRequest = async (promiseFactory, label) => {
 };
 
 export const getWeatherData = async (target, { signal } = {}) => {
+  if (!VC_API_KEY) {
+    throw userError('API Key cuaca (VITE_VISUALCROSSING_API_KEY) belum terpasang di .env.local atau server Vite belum di-restart.');
+  }
+
   // --- Langkah 1: Tentukan koordinat ---
   const place = await resolvePlace(target, signal);
   const { lat, lon } = place;
 
   // --- Langkah 2: Ambil cuaca, AQI, dan (bila perlu) nama tempat secara paralel ---
   const needsReverse = !place.name;
+
+  const weatherPromise = axios
+    .get(`${VC_BASE_URL}${lat},${lon}`, {
+      params: { unitGroup: 'metric', include: 'hours,current,alerts', key: VC_API_KEY, contentType: 'json' },
+      signal,
+    })
+    .catch((err) => {
+      if (axios.isCancel(err)) throw err;
+      if (err.response?.status === 401) {
+        throw userError('API Key cuaca tidak valid atau izin ditolak oleh Visual Crossing.');
+      }
+      if (err.response?.status === 429) {
+        throw userError('Batas kuota harian API Visual Crossing (1000 panggilan) telah tercapai.');
+      }
+      if (err.response?.status === 400) {
+        throw userError('Permintaan data cuaca tidak valid untuk lokasi ini.');
+      }
+      throw userError('Gagal mengambil data cuaca utama: ' + (err.response?.data?.message || err.message));
+    });
+
   const [weatherResponse, aqiResponse, reverse] = await Promise.all([
-    optionalRequest(
-      () =>
-        axios.get(`${VC_BASE_URL}${lat},${lon}`, {
-          params: { unitGroup: 'metric', include: 'hours,current,alerts', key: VC_API_KEY, contentType: 'json' },
-          signal,
-        }),
-      'VC API'
-    ),
+    weatherPromise,
     optionalRequest(() => axios.get(`${AQI_BASE_URL}${lat};${lon}/`, { params: { token: AQI_API_KEY }, signal }), 'AQI API'),
     needsReverse ? optionalRequest(() => reverseGeocode(lat, lon, { signal }), 'Reverse Geocoding') : Promise.resolve(null),
   ]);
 
   if (!weatherResponse || !weatherResponse.data || !weatherResponse.data.days?.length) {
-    throw userError('Gagal mengambil data cuaca utama.');
+    throw userError('Data cuaca untuk lokasi ini tidak tersedia.');
   }
   const weatherData = weatherResponse.data;
 

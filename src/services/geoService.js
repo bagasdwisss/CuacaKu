@@ -64,6 +64,9 @@ export const autocompletePlaces = async (text, { signal } = {}) => {
 
 // Teks bebas -> satu lokasi (dipakai saat Enter tanpa memilih saran)
 export const geocodePlace = async (text, { signal } = {}) => {
+    if (!GEO_API_KEY) {
+        throw userError('API Key Geoapify (VITE_GEOAPIFY_API_KEY) belum terpasang di .env.local atau server dev belum di-restart.');
+    }
     const { data } = await axios.get(`${GEO_BASE_URL}/search`, {
         params: { text, limit: 1, apiKey: GEO_API_KEY },
         signal,
