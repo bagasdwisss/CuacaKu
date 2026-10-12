@@ -44,9 +44,13 @@ const WeatherDetails = ({ current, today }) => {
                 />
                 <Tile
                     icon={<WiStrongWind size={22} />}
-                    label="Hembusan"
-                    value={has(current.windgust) ? formatWind(current.windgust) : '–'}
-                    sub={`Angin ${formatWind(current.windspeed)}`}
+                    label="Hembusan Angin"
+                    value={has(current.windgust) && Number(current.windgust) > Number(current.windspeed || 0)
+                        ? formatWind(current.windgust)
+                        : 'Tenang'}
+                    sub={has(current.windgust) && Number(current.windgust) > Number(current.windspeed || 0)
+                        ? `Angin rata-rata ${formatWind(current.windspeed)}`
+                        : `Kecepatan stabil ${formatWind(current.windspeed)}`}
                 />
                 <Tile
                     icon={<WiBarometer size={22} />}
