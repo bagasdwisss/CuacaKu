@@ -113,6 +113,12 @@ const WeatherRadarMap = ({ location }) => {
       const marker = L.marker([lat, lon], { icon: pinIcon }).addTo(map);
       marker.bindPopup(`<b>${cityName}</b><br/>Pusat Pantauan`).openPopup();
 
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 250);
+
       mapInstanceRef.current = map;
       markerRef.current = marker;
     } else {
@@ -128,14 +134,21 @@ const WeatherRadarMap = ({ location }) => {
 
       // Pan ke lokasi baru jika koordinat berubah
       mapInstanceRef.current.setView([lat, lon], 6);
+      mapInstanceRef.current.invalidateSize();
       if (markerRef.current) {
         markerRef.current.setLatLng([lat, lon]);
         markerRef.current.setPopupContent(`<b>${cityName}</b><br/>Pusat Pantauan`);
       }
     }
 
+    const handleWindowResize = () => {
+      mapInstanceRef.current?.invalidateSize();
+    };
+    window.addEventListener('resize', handleWindowResize);
+
     const layersMap = radarLayersMapRef.current;
     return () => {
+      window.removeEventListener('resize', handleWindowResize);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -273,8 +286,11 @@ const WeatherRadarMap = ({ location }) => {
       </div>
 
       {/* Map Container dengan Efek Glassmorphic & Rounded Elegan */}
-      <div className="relative w-full h-84 sm:h-[420px] rounded-2xl overflow-hidden border border-gray-200/80 dark:border-gray-700 shadow-inner">
-        <div ref={mapContainerRef} className="w-full h-full z-10" />
+      <div
+        className="relative w-full h-[460px] sm:h-[440px] rounded-2xl overflow-hidden border border-gray-200/80 dark:border-gray-700 shadow-inner"
+        style={{ minHeight: '420px' }}
+      >
+        <div ref={mapContainerRef} className="w-full h-full z-10" style={{ minHeight: '420px' }} />
 
         {/* Tombol Melayang: Pusatkan ke Lokasi */}
         <button
@@ -288,25 +304,25 @@ const WeatherRadarMap = ({ location }) => {
         </button>
 
         {/* Floating Glassmorphic Player Controller */}
-        <div className="absolute bottom-3 inset-x-3 sm:inset-x-6 z-[400] bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl p-3 sm:p-4 rounded-2xl border border-white/60 dark:border-gray-700/70 shadow-2xl flex flex-col gap-3">
+        <div className="absolute bottom-2.5 inset-x-2 sm:bottom-3 sm:inset-x-6 z-[400] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-2.5 sm:p-4 rounded-2xl border border-white/60 dark:border-gray-700/70 shadow-2xl flex flex-col gap-2.5 sm:gap-3">
           {/* Baris Atas: Tombol Putar, Waktu, & Pengatur Kecepatan */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => handleStep('prev')}
                 title="Frame Sebelumnya"
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
               >
-                <FaStepBackward size={11} />
+                <FaStepBackward size={10} />
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/25 active:scale-95 transition-all text-xs"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/25 active:scale-95 transition-all text-xs"
               >
-                {isPlaying ? <FaPause size={12} /> : <FaPlay size={12} />}
+                {isPlaying ? <FaPause size={11} /> : <FaPlay size={11} />}
                 <span>{isPlaying ? 'Jeda' : 'Putar'}</span>
               </button>
 
@@ -314,40 +330,40 @@ const WeatherRadarMap = ({ location }) => {
                 type="button"
                 onClick={() => handleStep('next')}
                 title="Frame Berikutnya"
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
               >
-                <FaStepForward size={11} />
+                <FaStepForward size={10} />
               </button>
 
               <button
                 type="button"
                 onClick={toggleSpeed}
                 title="Ubah Kecepatan Putar"
-                className="ml-1 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-xs border border-gray-200 dark:border-gray-700 transition-colors"
+                className="px-2 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-[11px] sm:text-xs border border-gray-200 dark:border-gray-700 transition-colors"
               >
-                Kecepatan: {SPEEDS[speedIndex].label}
+                {SPEEDS[speedIndex].label}
               </button>
             </div>
 
             {/* Waktu Frame & Status Live / Prediksi */}
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-gray-800 dark:text-gray-100 font-mono tracking-tight">
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-xs sm:text-sm text-gray-800 dark:text-gray-100 font-mono tracking-tight">
                 {formattedFrameTime} WIB
               </span>
               <span
-                className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider ${
                   isNowcast
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
                     : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                 }`}
               >
-                {isNowcast ? 'Prediksi (+)' : 'Terekam'}
+                {isNowcast ? 'Prediksi' : 'Terekam'}
               </span>
             </div>
           </div>
 
           {/* Baris Bawah: Timeline Scrubber & Legenda Warna */}
-          <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             {frames.length > 0 && (
               <div className="w-full flex-grow relative">
                 <input
@@ -365,9 +381,9 @@ const WeatherRadarMap = ({ location }) => {
             )}
 
             {/* Legenda Intensitas Presipitasi */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+            <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 font-medium">
               <span>Gerimis</span>
-              <div className="flex h-2.5 w-24 rounded-full overflow-hidden shadow-inner">
+              <div className="flex h-2.5 w-20 sm:w-24 rounded-full overflow-hidden shadow-inner">
                 <span className="w-1/4 bg-blue-300"></span>
                 <span className="w-1/4 bg-emerald-400"></span>
                 <span className="w-1/4 bg-amber-400"></span>
