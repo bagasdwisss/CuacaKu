@@ -63,9 +63,9 @@ const WeatherRadarMap = ({ location }) => {
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
         center: [lat, lon],
-        zoom: 8,
-        minZoom: 4,
-        maxZoom: 14,
+        zoom: 6,
+        minZoom: 3,
+        maxZoom: 11,
         zoomControl: true,
         attributionControl: false,
       });
@@ -106,7 +106,7 @@ const WeatherRadarMap = ({ location }) => {
       baseLayerRef.current = newBase;
 
       // Pan ke lokasi baru jika koordinat berubah
-      mapInstanceRef.current.setView([lat, lon], 8);
+      mapInstanceRef.current.setView([lat, lon], 6);
       if (markerRef.current) {
         markerRef.current.setLatLng([lat, lon]);
         markerRef.current.setPopupContent(`<b>${cityName}</b><br/>Pusat Lokasi Anda`);
@@ -137,8 +137,10 @@ const WeatherRadarMap = ({ location }) => {
     }
 
     const newLayer = L.tileLayer(tileUrl, {
-      opacity: 0.72,
+      opacity: 0.75,
       zIndex: 100,
+      maxNativeZoom: 7,
+      maxZoom: 11,
     });
 
     newLayer.addTo(mapInstanceRef.current);
