@@ -5,45 +5,57 @@ import { loadSlim } from "tsparticles-slim";
 import { rainOptions, snowOptions } from '../utils/animationOptions';
 import CloudAnimation from './CloudAnimation';
 
-// Animasi Sinar Matahari Berputar & Berpendar (Clear Day)
+// 1. Asset Foto Matahari Realistis (sun.jpg) dengan rotasi & pendaran sinar kosmik
 const SunAnimation = () => (
-  <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none overflow-hidden z-0">
-    <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-yellow-300/25 blur-2xl animate-pulse-slow" />
-    <div className="absolute top-4 right-4 w-24 h-24 rounded-full bg-gradient-to-br from-yellow-200 via-amber-300 to-orange-400 opacity-90 shadow-xl shadow-yellow-400/40 animate-pulse-slow" />
-    <div className="absolute top-4 right-4 w-24 h-24 animate-spin-slow origin-center opacity-40">
-      <div className="absolute inset-x-0 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-yellow-100 to-transparent transform -translate-y-1/2 scale-x-150" />
-      <div className="absolute inset-y-0 left-1/2 w-0.5 bg-gradient-to-b from-transparent via-yellow-100 to-transparent transform -translate-x-1/2 scale-y-150" />
-      <div className="absolute inset-x-0 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-yellow-100 to-transparent transform -translate-y-1/2 rotate-45 scale-x-150" />
-      <div className="absolute inset-x-0 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-yellow-100 to-transparent transform -translate-y-1/2 -rotate-45 scale-x-150" />
-    </div>
+  <div className="absolute -top-12 -right-12 w-64 h-64 sm:w-80 sm:h-80 pointer-events-none overflow-hidden z-0">
+    <img
+      src="/sun.jpg"
+      alt="Matahari Realistis"
+      className="w-full h-full object-contain animate-spin-slow opacity-85 select-none"
+      style={{ mixBlendMode: 'screen' }}
+    />
   </div>
 );
 
-// Animasi Bintang Kelap-Kelip & Bintang Jatuh (Clear Night)
-const NightStarsAnimation = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-    <div className="absolute top-6 left-1/4 w-1.5 h-1.5 rounded-full bg-white shadow-sm shadow-blue-100 animate-twinkle-fast" />
-    <div className="absolute top-12 left-2/3 w-2 h-2 rounded-full bg-indigo-100 shadow-sm shadow-white animate-twinkle-slow" style={{ animationDelay: '1s' }} />
-    <div className="absolute top-20 left-1/6 w-1 h-1 rounded-full bg-yellow-100 animate-twinkle-fast" style={{ animationDelay: '2s' }} />
-    <div className="absolute top-8 right-1/4 w-1.5 h-1.5 rounded-full bg-white animate-twinkle-slow" style={{ animationDelay: '0.5s' }} />
-    <div className="absolute top-24 right-1/3 w-1 h-1 rounded-full bg-blue-100 animate-twinkle-fast" style={{ animationDelay: '1.5s' }} />
-    <div className="absolute top-16 left-1/2 w-1.5 h-1.5 rounded-full bg-white animate-twinkle-slow" style={{ animationDelay: '2.5s' }} />
-    <div className="absolute top-28 left-3/4 w-1 h-1 rounded-full bg-cyan-100 animate-twinkle-fast" style={{ animationDelay: '3s' }} />
-    {/* Efek Bintang Jatuh Periodik */}
-    <div className="absolute top-6 right-16 w-20 h-0.5 bg-gradient-to-l from-white via-cyan-200 to-transparent -rotate-45 animate-shooting-star opacity-0" />
+// 2. Asset Foto Bulan Sabit & Bintang Kosmik Realistis (moon.jpg)
+const NightMoonAnimation = () => (
+  <div className="absolute -top-6 -right-6 w-56 h-56 sm:w-72 sm:h-72 pointer-events-none overflow-hidden z-0">
+    <img
+      src="/moon.jpg"
+      alt="Bulan & Bintang Realistis"
+      className="w-full h-full object-contain animate-pulse-slow opacity-90 select-none"
+      style={{ mixBlendMode: 'screen' }}
+    />
   </div>
 );
 
-// Animasi Kilatan Petir Realistis (Thunderstorm)
+// 3. Asset Foto Kilatan Petir Nyata (lightning.jpg) dengan animasi sambaran dramatis
 const LightningAnimation = () => (
-  <div className="absolute inset-0 pointer-events-none bg-blue-100/40 animate-lightning-flash mix-blend-overlay z-0" />
+  <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <img
+      src="/lightning.jpg"
+      alt="Kilatan Petir Realistis"
+      className="w-full h-full object-cover animate-lightning-flash select-none"
+      style={{ mixBlendMode: 'screen' }}
+    />
+  </div>
 );
 
-// Animasi Kabut Mengalir Halus (Fog / Mist / Wind)
+// 4. Asset Foto Aliran Kabut & Hawa Dingin Realistis (mist.jpg)
 const MistAnimation = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-35 z-0">
-    <div className="absolute -inset-x-1/4 top-1/4 h-24 bg-gradient-to-r from-transparent via-slate-200/60 to-transparent blur-xl animate-mist-drift-1" />
-    <div className="absolute -inset-x-1/4 top-1/2 h-28 bg-gradient-to-r from-transparent via-slate-300/50 to-transparent blur-2xl animate-mist-drift-2" />
+  <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <img
+      src="/mist.jpg"
+      alt="Kabut Realistis 1"
+      className="absolute -inset-x-1/4 top-1/4 w-[150%] h-36 object-cover opacity-60 animate-mist-drift-1 select-none"
+      style={{ mixBlendMode: 'screen' }}
+    />
+    <img
+      src="/mist.jpg"
+      alt="Kabut Realistis 2"
+      className="absolute -inset-x-1/4 top-1/2 w-[150%] h-40 object-cover opacity-50 animate-mist-drift-2 select-none"
+      style={{ mixBlendMode: 'screen' }}
+    />
   </div>
 );
 
@@ -70,7 +82,7 @@ const WeatherAnimation = ({ weatherIcon = '' }) => {
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-      {/* 1. Hujan / Salju Partikel */}
+      {/* 1. Hujan / Salju Partikel Dinamis */}
       {options && (
         <Particles
           id={`tsparticles-${icon}`}
@@ -80,23 +92,23 @@ const WeatherAnimation = ({ weatherIcon = '' }) => {
         />
       )}
 
-      {/* 2. Kilatan Petir jika Badai */}
+      {/* 2. Kilatan Petir Realistis (Foto Asli lightning.jpg) */}
       {isThunder && <LightningAnimation />}
 
-      {/* 3. Awan Bergerak jika Berawan atau Hujan */}
+      {/* 3. Awan Bergerak Realistis (Foto Asli cloud1.png, cloud2.png, cloud3.png) */}
       {(isCloudy || isRaining) && <CloudAnimation />}
 
-      {/* 4. Sinar Matahari Berputar jika Siang Cerah atau Cerah Berawan Siang */}
+      {/* 4. Matahari Nyata Bersinar (Foto Asli sun.jpg) jika Siang Cerah / Berawan Siang */}
       {(isClearDay || (isCloudy && icon.includes('day'))) && !isRaining && !isSnowing && (
         <SunAnimation />
       )}
 
-      {/* 5. Bintang & Malam jika Malam Hari Cerah atau Berawan Malam */}
+      {/* 5. Bulan Sabit & Bintang Nyata (Foto Asli moon.jpg) jika Malam Cerah / Berawan Malam */}
       {(isClearNight || (isCloudy && icon.includes('night'))) && !isRaining && (
-        <NightStarsAnimation />
+        <NightMoonAnimation />
       )}
 
-      {/* 6. Gelombang Kabut jika Berkabut / Berangin */}
+      {/* 6. Aliran Kabut Asli (Foto Asli mist.jpg) jika Berkabut / Berangin */}
       {isFogOrWind && <MistAnimation />}
     </div>
   );
