@@ -115,8 +115,8 @@ const CurrentWeather = ({ data }) => {
   const clock = { hour: '2-digit', minute: '2-digit', timeZone: timezone };
 
   return (
-    <div className={`relative p-5 sm:p-7 rounded-2xl shadow-xl overflow-hidden text-white ${backgroundClass} border border-white/15 transition-all duration-700 min-h-[340px] flex flex-col justify-between`}>
-      {/* 1. Video Background Landscape (Jelas, Tanpa Halangan, Sangat Terbuka) */}
+    <div className={`relative p-5 sm:p-7 rounded-3xl shadow-2xl overflow-hidden text-white ${backgroundClass} border border-white/20 transition-all duration-700 min-h-[350px] flex flex-col justify-between apple-glass`}>
+      {/* 1. Video Background Landscape (Jernih, Tanpa Penghalang Besar) */}
       <video
         ref={videoRef}
         key={videoSrc}
@@ -132,74 +132,74 @@ const CurrentWeather = ({ data }) => {
         <source src={videoSrc} type="video/mp4" />
       </video>
 
-      {/* 2. Vignette Tipis Minimalis di Tepian (Hanya untuk kontras teks putih, video tetap nampak 90% jernih) */}
+      {/* 2. Soft Ambient Lighting Apple-style Vignette */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/35 z-[1] pointer-events-none" />
 
-      {/* 3. Lapisan Animasi Partikel Tambahan jika ada */}
+      {/* 3. Lapisan Animasi Partikel Cuaca */}
       <div className="absolute inset-0 w-full h-full z-[2] pointer-events-none">
         <WeatherAnimation weatherIcon={current.icon} />
       </div>
 
-      {/* 4. Konten Minimalis & Elegan Mengambang Bebas di Atas Video (z-10) */}
+      {/* 4. Konten Apple / Mac Weather Style (z-10) */}
       <div className="relative z-10 flex flex-col justify-between h-full space-y-6">
         
-        {/* Baris Atas: Lokasi & Waktu (Kiri), Info Terbit / Terbenam Tipis (Kanan) */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        {/* Header Bar: Lokasi (Kiri), Pill Terbit & Terbenam Apple-style (Kanan) */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <div className="flex items-center gap-2">
               <FaMapMarkerAlt className="text-red-400 text-sm drop-shadow" />
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
                 {location.name}
                 {location.country && location.name.toLowerCase() !== location.country.toLowerCase() ? `, ${location.country}` : ''}
               </h2>
             </div>
-            <p className="text-white/80 text-xs mt-0.5 font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+            <p className="text-white/80 text-xs mt-0.5 font-medium tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
               {new Date().toLocaleString('id-ID', timeFormatOptions)}
             </p>
           </div>
 
-          {/* Jam Terbit & Terbenam Minimalis (Inline Pill Ringan) */}
-          <div className="flex items-center gap-3 bg-black/25 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-xs text-white/90">
-            <div className="flex items-center gap-1">
+          {/* Jam Terbit & Terbenam Apple macOS Pill */}
+          <div className="apple-pill px-3.5 py-1.5 rounded-full flex items-center gap-3 text-xs text-white/95 tracking-wide">
+            <div className="flex items-center gap-1.5">
               <WiSunrise size={20} className="text-amber-300 drop-shadow" />
-              <span>{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
+              <span className="font-semibold">{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
-            <span className="text-white/30">•</span>
-            <div className="flex items-center gap-1">
+            <span className="text-white/35">•</span>
+            <div className="flex items-center gap-1.5">
               <WiSunset size={20} className="text-orange-400 drop-shadow" />
-              <span>{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
+              <span className="font-semibold">{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
           </div>
         </div>
 
-        {/* Baris Tengah: Suhu Utama, Ikon, & Kondisi Cuaca (Bersih, Ramping, Anggun) */}
+        {/* Hero Suhu & Status Cuaca Apple Weather */}
         <div className="flex flex-wrap items-center justify-between gap-4 py-2">
-          <div className="flex items-center gap-4">
-            <div className="drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="drop-shadow-[0_6px_12px_rgba(0,0,0,0.5)]">
               {getWeatherIcon(current.icon)}
             </div>
             <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl sm:text-6xl font-bold tracking-tight drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)]">
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-5xl sm:text-6xl font-extrabold tracking-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.85)]">
                   {formatTemp(current.temp)}
                 </span>
-                <span className="text-xs sm:text-sm text-white/80 drop-shadow">
+                <span className="text-sm sm:text-base text-white/85 font-medium drop-shadow">
                   Terasa {formatTemp(current.feelslike)}
                 </span>
               </div>
-              <p className="text-sm sm:text-base font-semibold capitalize text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <p className="text-base sm:text-lg font-semibold capitalize text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)] mt-0.5">
                 {translateWeatherCondition(current.conditions)}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Baris Bawah: 4 Metrik Ringkas dengan Efek Frosted Glass Ramping (Tidak Menghalangi Video) */}
+        {/* 4 Apple macOS Frosted Glass Compact Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {/* UV Index */}
-          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiSun className="text-amber-300 text-sm drop-shadow" />
+          <div className="apple-card px-3.5 py-2.5 rounded-2xl flex items-center justify-between transition-transform duration-200 hover:scale-[1.02]">
+            <div className="flex items-center gap-2.5">
+              <FiSun className="text-amber-300 text-base drop-shadow" />
               <div className="text-left">
                 <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">UV Index</p>
                 <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
@@ -207,13 +207,13 @@ const CurrentWeather = ({ data }) => {
                 </p>
               </div>
             </div>
-            <span className={`w-2 h-2 rounded-full ${uvCategory.dot} shadow-sm`} />
+            <span className={`w-2 h-2 rounded-full ${uvCategory.dot} shadow-sm ring-2 ring-white/20`} />
           </div>
 
           {/* Kelembapan */}
-          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <WiHumidity size={20} className="text-sky-300 -my-1 drop-shadow" />
+          <div className="apple-card px-3.5 py-2.5 rounded-2xl flex items-center justify-between transition-transform duration-200 hover:scale-[1.02]">
+            <div className="flex items-center gap-2.5">
+              <WiHumidity size={22} className="text-sky-300 -my-1 drop-shadow" />
               <div className="text-left">
                 <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">Kelembapan</p>
                 <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
@@ -224,9 +224,9 @@ const CurrentWeather = ({ data }) => {
           </div>
 
           {/* Kecepatan Angin */}
-          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <WiStrongWind size={20} className="text-teal-300 -my-1 drop-shadow" />
+          <div className="apple-card px-3.5 py-2.5 rounded-2xl flex items-center justify-between transition-transform duration-200 hover:scale-[1.02]">
+            <div className="flex items-center gap-2.5">
+              <WiStrongWind size={22} className="text-teal-300 -my-1 drop-shadow" />
               <div className="text-left">
                 <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">Angin</p>
                 <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
@@ -237,9 +237,9 @@ const CurrentWeather = ({ data }) => {
           </div>
 
           {/* Indeks Udara (AQI) */}
-          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiWind className="text-emerald-300 text-sm drop-shadow" />
+          <div className="apple-card px-3.5 py-2.5 rounded-2xl flex items-center justify-between transition-transform duration-200 hover:scale-[1.02]">
+            <div className="flex items-center gap-2.5">
+              <FiWind className="text-emerald-300 text-base drop-shadow" />
               <div className="text-left">
                 <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">AQI</p>
                 <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
@@ -247,7 +247,7 @@ const CurrentWeather = ({ data }) => {
                 </p>
               </div>
             </div>
-            <span className={`w-2 h-2 rounded-full ${aqiData.dot} shadow-sm`} />
+            <span className={`w-2 h-2 rounded-full ${aqiData.dot} shadow-sm ring-2 ring-white/20`} />
           </div>
         </div>
 
