@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { FaRegNewspaper, FaHistory } from 'react-icons/fa';
 import { translateWeatherCondition } from '../utils/translations';
 import { useSettings } from '../context/settingsContext';
+import { getHistoricalDisasterEvent } from '../data/weatherDisasterHistory';
 
 // Helper function untuk menemukan kondisi cuaca yang paling sering muncul dalam satu periode
 const getDominantCondition = (hours) => {
@@ -58,35 +59,16 @@ const generateSummary = (dayData, hourlyData, formatTemp) => {
   return summaryParts.join(' ');
 };
 
-// Kilas Balik Cuaca Sejarah (Komparasi Berbasis Iklim / On This Day)
-const generateHistoryTrivia = (dayData, formatTemp) => {
-  if (!dayData) return null;
-  const currentAvg = dayData.temp ?? ((dayData.tempmax + dayData.tempmin) / 2);
-  // Perhitungan variasi klimatologi historis khas tanggal ini
-  const dateObj = new Date(dayData.datetime || Date.now());
-  const dayOfYear = Math.floor((dateObj - new Date(dateObj.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-  const seededDiff = (((dayOfYear * 9301 + 49297) % 233280) / 233280) * 4 - 2; // variasi antara -2°C hingga +2°C
-  const lastYearTemp = currentAvg + seededDiff;
-  const diffVal = Math.abs(currentAvg - lastYearTemp).toFixed(1);
-
-  if (seededDiff > 0.6) {
-    return `Tepat setahun lalu pada tanggal ini, suhu rata-rata tercatat sekitar ${formatTemp(lastYearTemp)} (~${diffVal}°C lebih hangat dibanding hari ini).`;
-  } else if (seededDiff < -0.6) {
-    return `Tepat setahun lalu pada tanggal ini, udara tercatat lebih sejuk sekitar ${formatTemp(lastYearTemp)} (~${diffVal}°C lebih dingin dibanding hari ini).`;
-  }
-  return `Tepat setahun lalu pada tanggal ini, kondisi suhu relatif mirip di angka rata-rata ${formatTemp(lastYearTemp)}.`;
-};
-
 const DailySummary = ({ dayData, hourlyData }) => {
   const { formatTemp } = useSettings();
   if (!dayData || !hourlyData) return null;
 
   const summaryText = generateSummary(dayData, hourlyData, formatTemp);
-  const historyTrivia = useMemo(() => generateHistoryTrivia(dayData, formatTemp), [dayData, formatTemp]);
+  const historyEvent = useMemo(() => getHistoricalDisasterEvent(dayData.datetime), [dayData.datetime]);
 
   return (
     <div className="space-y-3">
-      {/* Ringkasan Cuaca Utama */}
+      {/* Ringkasan Cuaca Utama Hari Ini */}
       <div className="flex items-start gap-4 p-4 bg-blue-50/90 dark:bg-slate-800/90 border-l-4 border-blue-500 rounded-r-2xl shadow-sm">
         <div className="text-blue-500 mt-1 flex-shrink-0">
           <FaRegNewspaper size={24} />
@@ -97,16 +79,25 @@ const DailySummary = ({ dayData, hourlyData }) => {
         </div>
       </div>
 
-      {/* Kilas Balik Cuaca Sejarah (On This Day) */}
-      {historyTrivia && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs sm:text-sm text-amber-900 dark:text-amber-200">
-          <div className="text-amber-600 dark:text-amber-400 flex-shrink-0">
-            <FaHistory size={16} />
+      {/* Kilas Balik Bencana Cuaca & Geologis Bersejarah Dunia (On This Day) */}
+      {historyEvent && (
+        <div className="flex items-start gap-3 p-3.5 bg-gradient-to-r from-rose-50/95 via-amber-50/90 to-orange-50/80 dark:from-rose-950/40 dark:via-amber-950/30 dark:to-orange-950/30 border border-rose-200 dark:border-rose-900/60 rounded-2xl text-xs sm:text-sm text-gray-800 dark:text-gray-200 shadow-sm">
+          <div className="p-2 rounded-xl bg-rose-500 text-white flex-shrink-0 shadow-sm mt-0.5">
+            <FaHistory size={15} />
           </div>
-          <p className="leading-snug">
-            <span className="font-bold text-amber-800 dark:text-amber-300">Kilas Balik Sejarah: </span>
-            {historyTrivia}
-          </p>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-extrabold text-rose-700 dark:text-rose-400 text-xs sm:text-sm tracking-tight">
+                Kilas Balik Hari Ini ({historyEvent.dateFormatted}):
+              </span>
+              <span className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm">
+                {historyEvent.title} ({historyEvent.year})
+              </span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-xs sm:text-sm">
+              {historyEvent.desc}
+            </p>
+          </div>
         </div>
       )}
     </div>
