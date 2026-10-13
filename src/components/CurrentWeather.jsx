@@ -116,8 +116,8 @@ const CurrentWeather = ({ data }) => {
   const clock = { hour: '2-digit', minute: '2-digit', timeZone: timezone };
 
   return (
-    <div className={`relative p-6 rounded-2xl shadow-xl overflow-hidden transition-all duration-1000 text-white ${backgroundClass}`}>
-      {/* Video Background (Responsif, Object-Cover, Muted, Infinite Loop, Ringan) */}
+    <div className={`relative p-5 sm:p-7 rounded-3xl shadow-2xl overflow-hidden transition-all duration-1000 text-white ${backgroundClass}`}>
+      {/* Video Background (Jelas & Terang dengan opacity tinggi, Responsif, Object-Cover, Muted, Infinite Loop) */}
       <video
         ref={videoRef}
         key={videoSrc}
@@ -128,13 +128,13 @@ const CurrentWeather = ({ data }) => {
         preload="auto"
         disablePictureInPicture
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-90 transform-gpu"
+        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-100 contrast-[1.05] transform-gpu opacity-95"
       >
         <source src={videoSrc} type="video/mp4" />
       </video>
 
-      {/* Lapisan Gradient Overlay untuk Kontras & Keterbacaan Teks pada Tampilan Mobile & Desktop */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/30 z-[1] pointer-events-none backdrop-blur-[0.5px]" />
+      {/* Lapisan Gradient Halus Tipis agar video tetap terlihat jelas & hidup sambil menjaga keterbacaan teks */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-black/20 z-[1] pointer-events-none" />
 
       {/* Lapisan Animasi Partikel Tambahan jika ada (z-[2]) */}
       <div className="absolute inset-0 w-full h-full z-[2] pointer-events-none">
@@ -142,55 +142,72 @@ const CurrentWeather = ({ data }) => {
       </div>
 
       {/* Lapisan Konten Utama (z-10) */}
-      <div className="relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-        <div className="flex flex-col sm:flex-row justify-between items-start">
+      <div className="relative z-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-md">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               {location.name}
               {location.country && location.name.toLowerCase() !== location.country.toLowerCase() ? `, ${location.country}` : ''}
             </h2>
-            <p className="text-white/85 text-sm sm:text-base mt-0.5">{new Date().toLocaleString('id-ID', timeFormatOptions)}</p>
+            <p className="text-white/90 text-sm sm:text-base mt-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">{new Date().toLocaleString('id-ID', timeFormatOptions)}</p>
             <div className="flex items-center mt-4">
-              <div className="filter drop-shadow-md">{getWeatherIcon(current.icon)}</div>
+              <div className="filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">{getWeatherIcon(current.icon)}</div>
               <div className="ml-4">
-                <p className="text-5xl sm:text-6xl font-bold tracking-tight">{formatTemp(current.temp)}</p>
-                <p className="text-sm text-white/85 -mt-1 font-medium">Terasa seperti {formatTemp(current.feelslike)}</p>
-                <p className="text-lg font-semibold capitalize mt-2 text-white/95">{translateWeatherCondition(current.conditions)}</p>
+                <p className="text-5xl sm:text-6xl font-black tracking-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)]">{formatTemp(current.temp)}</p>
+                <p className="text-sm text-white/90 -mt-1 font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Terasa seperti {formatTemp(current.feelslike)}</p>
+                <p className="text-lg font-bold capitalize mt-2 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{translateWeatherCondition(current.conditions)}</p>
               </div>
             </div>
           </div>
-          <div className="mt-5 sm:mt-0 text-left sm:text-right bg-black/25 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none backdrop-blur-sm sm:backdrop-blur-none border border-white/10 sm:border-none w-full sm:w-auto">
+
+          <div className="text-left sm:text-right bg-white/10 dark:bg-black/20 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/20 shadow-lg w-full sm:w-auto">
             <div className="flex items-center justify-start sm:justify-end space-x-3 mb-2">
-              <WiSunrise size={38} className="text-amber-300 drop-shadow" />
-              <span className="text-sm sm:text-base font-medium">{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
+              <WiSunrise size={36} className="text-amber-300 drop-shadow" />
+              <span className="text-sm sm:text-base font-semibold drop-shadow">{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
             <div className="flex items-center justify-start sm:justify-end space-x-3">
-              <WiSunset size={38} className="text-orange-400 drop-shadow" />
-              <span className="text-sm sm:text-base font-medium">{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
+              <WiSunset size={36} className="text-orange-400 drop-shadow" />
+              <span className="text-sm sm:text-base font-semibold drop-shadow">{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-white/25 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
-          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
-            <p className="text-xs sm:text-sm text-white/80 font-medium">UV Index</p>
-            <p className={`font-bold text-sm sm:text-base mt-1 px-2.5 py-0.5 rounded-full text-white inline-block shadow-sm ${uvCategory.color}`}>
-              {uvCategory.label} ({current.uvindex})
+        {/* 4 Kartu Metrik Cuaca dengan Modern Glassmorphism Style */}
+        <div className="mt-6 pt-5 border-t border-white/20 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+          {/* UV Index */}
+          <div className="bg-white/15 dark:bg-black/25 backdrop-blur-lg rounded-2xl p-3.5 sm:p-4 border border-white/25 shadow-[0_8px_32px_0_rgba(0,0,0,0.25)] flex flex-col justify-between items-center transition-transform duration-300 hover:scale-[1.02]">
+            <p className="text-xs sm:text-sm text-white/90 font-medium tracking-wide drop-shadow">UV Index</p>
+            <div className="mt-2 w-full flex justify-center">
+              <span className={`font-bold text-xs sm:text-sm px-3 py-1 rounded-full text-white shadow-md border border-white/20 ${uvCategory.color}`}>
+                {uvCategory.label} ({current.uvindex})
+              </span>
+            </div>
+          </div>
+
+          {/* Kelembapan */}
+          <div className="bg-white/15 dark:bg-black/25 backdrop-blur-lg rounded-2xl p-3.5 sm:p-4 border border-white/25 shadow-[0_8px_32px_0_rgba(0,0,0,0.25)] flex flex-col justify-between items-center transition-transform duration-300 hover:scale-[1.02]">
+            <p className="text-xs sm:text-sm text-white/90 font-medium tracking-wide drop-shadow">Kelembapan</p>
+            <p className="font-extrabold text-xl sm:text-2xl mt-1.5 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+              {Math.round(current.humidity)}%
             </p>
           </div>
-          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
-            <p className="text-xs sm:text-sm text-white/80 font-medium">Kelembapan</p>
-            <p className="font-bold text-lg sm:text-xl mt-0.5">{Math.round(current.humidity)}%</p>
-          </div>
-          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
-            <p className="text-xs sm:text-sm text-white/80 font-medium">Kecepatan Angin</p>
-            <p className="font-bold text-lg sm:text-xl mt-0.5">{formatWind(current.windspeed)}</p>
-          </div>
-          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
-            <p className="text-xs sm:text-sm text-white/80 font-medium">Indeks Udara (AQI)</p>
-            <p className={`font-bold text-sm sm:text-base mt-1 px-2.5 py-0.5 rounded-full text-white inline-block shadow-sm ${aqiData.color}`}>
-              {aqiData.label} ({current.aqi ?? 'N/A'})
+
+          {/* Kecepatan Angin */}
+          <div className="bg-white/15 dark:bg-black/25 backdrop-blur-lg rounded-2xl p-3.5 sm:p-4 border border-white/25 shadow-[0_8px_32px_0_rgba(0,0,0,0.25)] flex flex-col justify-between items-center transition-transform duration-300 hover:scale-[1.02]">
+            <p className="text-xs sm:text-sm text-white/90 font-medium tracking-wide drop-shadow">Kecepatan Angin</p>
+            <p className="font-extrabold text-xl sm:text-2xl mt-1.5 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+              {formatWind(current.windspeed)}
             </p>
+          </div>
+
+          {/* Indeks Udara (AQI) */}
+          <div className="bg-white/15 dark:bg-black/25 backdrop-blur-lg rounded-2xl p-3.5 sm:p-4 border border-white/25 shadow-[0_8px_32px_0_rgba(0,0,0,0.25)] flex flex-col justify-between items-center transition-transform duration-300 hover:scale-[1.02]">
+            <p className="text-xs sm:text-sm text-white/90 font-medium tracking-wide drop-shadow">Indeks Udara (AQI)</p>
+            <div className="mt-2 w-full flex justify-center">
+              <span className={`font-bold text-xs sm:text-sm px-3 py-1 rounded-full text-white shadow-md border border-white/20 ${aqiData.color}`}>
+                {aqiData.label} ({current.aqi ?? 'N/A'})
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -3,13 +3,11 @@ import React, { useMemo, useCallback } from 'react';
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim"; 
 import { rainOptions, snowOptions } from '../utils/animationOptions';
-import CloudAnimation from './CloudAnimation';
 
 const WeatherAnimation = ({ weatherIcon = '' }) => {
   const icon = String(weatherIcon).toLowerCase();
 
   const isRaining = icon.includes('rain') || icon.includes('showers') || icon.includes('thunder');
-  const isCloudy = icon.includes('cloudy') || icon.includes('overcast');
   const isSnowing = icon.includes('snow');
 
   const particlesInit = useCallback(async (engine) => {
@@ -22,10 +20,8 @@ const WeatherAnimation = ({ weatherIcon = '' }) => {
     return null;
   }, [isRaining, isSnowing]);
 
-  // Tampilkan animasi awan jika berawan dan tidak hujan/salju
-  if (isCloudy && !isRaining && !isSnowing) {
-    return <CloudAnimation />;
-  }
+  // Catatan: Awan kini sepenuhnya ditangani oleh aset video cuaca (berawanlandscape.mp4)
+  // sehingga CloudAnimation tidak lagi dipanggil agar tidak tumpang tindih dengan video.
 
   // Jika tidak ada opsi partikel (cuaca cerah, dll.), jangan tampilkan apa-apa
   if (!options) {
