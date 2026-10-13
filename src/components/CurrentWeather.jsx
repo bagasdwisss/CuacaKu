@@ -1,5 +1,5 @@
 // src/components/CurrentWeather.jsx
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import WeatherAnimation from './WeatherAnimation';
 import { getWeatherIcon } from '../utils/iconService';
 import { translateWeatherCondition } from '../utils/translations';
@@ -7,13 +7,32 @@ import { isDaytime } from '../utils/timeUtils';
 import { useSettings } from '../context/settingsContext';
 import { WiSunrise, WiSunset } from 'react-icons/wi';
 
-// Helper fungsi untuk memilih background lokal di dalam komponen
+// Helper fungsi untuk memilih background video sesuai cuaca
+const getWeatherVideo = (iconName = '') => {
+  const icon = String(iconName).toLowerCase();
+  if (icon.includes('thunder')) {
+    return '/hujanpetirlandscape.mp4';
+  }
+  if (icon.includes('rain') || icon.includes('showers') || icon.includes('drizzle')) {
+    return '/hujanlandscape.mp4';
+  }
+  if (icon.includes('cloudy') || icon.includes('overcast')) {
+    return '/berawanlandscape.mp4';
+  }
+  if (icon.includes('clear')) {
+    return '/cerahlandscape.mp4';
+  }
+  // Default fallback untuk jenis cuaca lainnya (fog, wind, dll)
+  return '/berawanlandscape.mp4';
+};
+
+// Helper fungsi untuk memilih background lokal gradien (fallback & warna dasar)
 const getLocalBackgroundClass = (icon, isDay) => {
   const gradients = {
-    clearDay: 'from-sky-400 to-blue-500',
-    clearNight: 'from-slate-900 to-indigo-900',
-    cloudy: 'from-slate-400 to-gray-600',
-    rain: 'from-gray-600 to-slate-800',
+    clearDay: 'from-sky-500 to-blue-600',
+    clearNight: 'from-slate-900 to-indigo-950',
+    cloudy: 'from-slate-600 to-gray-800',
+    rain: 'from-slate-700 to-gray-900',
   };
 
   let bgClass = '';
@@ -67,11 +86,27 @@ const getUVCategory = (uv) => {
 const CurrentWeather = ({ data }) => {
   const { location, current, timezone } = data;
   const { formatTemp, formatWind } = useSettings();
+  const videoRef = useRef(null);
 
   const isDay = isDaytime(current);
   const backgroundClass = getLocalBackgroundClass(current.icon, isDay);
+  const videoSrc = getWeatherVideo(current.icon);
   const aqiData = getAQICategory(current.aqi);
   const uvCategory = getUVCategory(current.uvindex);
+
+  // Pastikan video memutar otomatis di berbagai browser / mobile policy
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Browser autoplay policy dicegah secara halus tanpa error
+        });
+      }
+    }
+  }, [videoSrc]);
 
   const timeFormatOptions = {
     weekday: 'long', year: 'numeric', month: 'long',
@@ -81,58 +116,81 @@ const CurrentWeather = ({ data }) => {
   const clock = { hour: '2-digit', minute: '2-digit', timeZone: timezone };
 
   return (
-    <div className={`relative p-6 rounded-lg shadow-lg overflow-hidden transition-all duration-1000 text-white ${backgroundClass}`}>
-      {/* Lapisan Animasi (paling belakang, z-0) */}
-      <div className="absolute top-0 left-0 w-full h-full z-0">
+    <div className={`relative p-6 rounded-2xl shadow-xl overflow-hidden transition-all duration-1000 text-white ${backgroundClass}`}>
+      {/* Video Background (Responsif, Object-Cover, Muted, Infinite Loop, Ringan) */}
+      <video
+        ref={videoRef}
+        key={videoSrc}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        disablePictureInPicture
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-90 transform-gpu"
+      >
+        <source src={videoSrc} type="video/mp4" />
+      </video>
+
+      {/* Lapisan Gradient Overlay untuk Kontras & Keterbacaan Teks pada Tampilan Mobile & Desktop */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/30 z-[1] pointer-events-none backdrop-blur-[0.5px]" />
+
+      {/* Lapisan Animasi Partikel Tambahan jika ada (z-[2]) */}
+      <div className="absolute inset-0 w-full h-full z-[2] pointer-events-none">
         <WeatherAnimation weatherIcon={current.icon} />
       </div>
 
-      {/* Lapisan Konten (di atas animasi, z-10) */}
-      <div className="relative z-10">
+      {/* Lapisan Konten Utama (z-10) */}
+      <div className="relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
         <div className="flex flex-col sm:flex-row justify-between items-start">
           <div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-md">
               {location.name}
               {location.country && location.name.toLowerCase() !== location.country.toLowerCase() ? `, ${location.country}` : ''}
             </h2>
-            <p className="opacity-80">{new Date().toLocaleString('id-ID', timeFormatOptions)}</p>
+            <p className="text-white/85 text-sm sm:text-base mt-0.5">{new Date().toLocaleString('id-ID', timeFormatOptions)}</p>
             <div className="flex items-center mt-4">
-              <div>{getWeatherIcon(current.icon)}</div>
+              <div className="filter drop-shadow-md">{getWeatherIcon(current.icon)}</div>
               <div className="ml-4">
-                <p className="text-5xl font-semibold">{formatTemp(current.temp)}</p>
-                <p className="text-sm opacity-80 -mt-1">Terasa seperti {formatTemp(current.feelslike)}</p>
-                <p className="text-lg capitalize mt-2">{translateWeatherCondition(current.conditions)}</p>
+                <p className="text-5xl sm:text-6xl font-bold tracking-tight">{formatTemp(current.temp)}</p>
+                <p className="text-sm text-white/85 -mt-1 font-medium">Terasa seperti {formatTemp(current.feelslike)}</p>
+                <p className="text-lg font-semibold capitalize mt-2 text-white/95">{translateWeatherCondition(current.conditions)}</p>
               </div>
             </div>
           </div>
-          <div className="mt-6 sm:mt-0 text-left sm:text-right">
-            <div className="flex items-center justify-start sm:justify-end space-x-4 mb-2">
-              <WiSunrise size={40} className="text-yellow-300" />
-              <p>{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</p>
+          <div className="mt-5 sm:mt-0 text-left sm:text-right bg-black/25 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none backdrop-blur-sm sm:backdrop-blur-none border border-white/10 sm:border-none w-full sm:w-auto">
+            <div className="flex items-center justify-start sm:justify-end space-x-3 mb-2">
+              <WiSunrise size={38} className="text-amber-300 drop-shadow" />
+              <span className="text-sm sm:text-base font-medium">{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
-            <div className="flex items-center justify-start sm:justify-end space-x-4">
-              <WiSunset size={40} className="text-orange-300" />
-              <p>{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</p>
+            <div className="flex items-center justify-start sm:justify-end space-x-3">
+              <WiSunset size={38} className="text-orange-400 drop-shadow" />
+              <span className="text-sm sm:text-base font-medium">{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-white/20 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div>
-            <p className="opacity-80">UV Index</p>
-            <p className={`font-bold text-lg px-2 py-1 rounded-full text-white ${uvCategory.color}`}>{uvCategory.label} ({current.uvindex})</p>
+        <div className="mt-6 pt-5 border-t border-white/25 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
+            <p className="text-xs sm:text-sm text-white/80 font-medium">UV Index</p>
+            <p className={`font-bold text-sm sm:text-base mt-1 px-2.5 py-0.5 rounded-full text-white inline-block shadow-sm ${uvCategory.color}`}>
+              {uvCategory.label} ({current.uvindex})
+            </p>
           </div>
-          <div>
-            <p className="opacity-80">Kelembapan</p>
-            <p className="font-bold text-lg">{Math.round(current.humidity)}%</p>
+          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
+            <p className="text-xs sm:text-sm text-white/80 font-medium">Kelembapan</p>
+            <p className="font-bold text-lg sm:text-xl mt-0.5">{Math.round(current.humidity)}%</p>
           </div>
-          <div>
-            <p className="opacity-80">Kecepatan Angin</p>
-            <p className="font-bold text-lg">{formatWind(current.windspeed)}</p>
+          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
+            <p className="text-xs sm:text-sm text-white/80 font-medium">Kecepatan Angin</p>
+            <p className="font-bold text-lg sm:text-xl mt-0.5">{formatWind(current.windspeed)}</p>
           </div>
-          <div>
-            <p className="opacity-80">Indeks Udara (AQI)</p>
-            <p className={`font-bold text-lg px-2 py-1 rounded-full text-white ${aqiData.color}`}>{aqiData.label} ({current.aqi ?? 'N/A'})</p>
+          <div className="bg-black/30 sm:bg-black/20 backdrop-blur-md rounded-xl p-3 border border-white/10">
+            <p className="text-xs sm:text-sm text-white/80 font-medium">Indeks Udara (AQI)</p>
+            <p className={`font-bold text-sm sm:text-base mt-1 px-2.5 py-0.5 rounded-full text-white inline-block shadow-sm ${aqiData.color}`}>
+              {aqiData.label} ({current.aqi ?? 'N/A'})
+            </p>
           </div>
         </div>
       </div>
