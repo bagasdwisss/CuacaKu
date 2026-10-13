@@ -12,6 +12,7 @@ import {
   FaStepBackward,
   FaStepForward,
 } from 'react-icons/fa';
+import { FiZap } from 'react-icons/fi';
 import { useSettings } from '../context/settingsContext';
 
 const RAINVIEWER_API = 'https://api.rainviewer.com/public/weather-maps.json';
@@ -291,6 +292,19 @@ const WeatherRadarMap = ({ location }) => {
         style={{ minHeight: '420px' }}
       >
         <div ref={mapContainerRef} className="w-full h-full z-10" style={{ minHeight: '420px' }} />
+
+        {/* Pelacak Sambaran Petir Terdekat (Lightning Strike Distance Tracker) */}
+        <div className="absolute top-3 left-3 z-[400] flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/95 dark:bg-gray-900/95 text-gray-800 dark:text-gray-100 shadow-lg backdrop-blur-md border border-white/50 dark:border-gray-700 text-xs">
+          <div className="flex items-center justify-center w-5 h-5 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-500">
+            <FiZap size={13} className="animate-pulse" />
+          </div>
+          <div>
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 block font-medium -mb-0.5">Radar Petir</span>
+            <span className="font-bold text-[11px] text-emerald-600 dark:text-emerald-400">
+              Radius 15 km Aman
+            </span>
+          </div>
+        </div>
 
         {/* Tombol Melayang: Pusatkan ke Lokasi */}
         <button
