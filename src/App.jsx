@@ -15,6 +15,7 @@ import ActivityIndex from './components/ActivityIndex';
 import DailySummary from './components/DailySummary';
 import ClothingAdvice from './components/ClothingAdvice';
 import WeatherDetails from './components/WeatherDetails';
+import CelestialTracker from './components/CelestialTracker';
 import HydrationCalculator from './components/HydrationCalculator';
 import WeekendPlanner from './components/WeekendPlanner';
 import WeatherRadarMap from './components/WeatherRadarMap';
@@ -229,6 +230,7 @@ function App() {
               <DailySummary dayData={weatherData.daily[0]} hourlyData={weatherData.hoursToday} />
               <ClothingAdvice current={weatherData.current} upcoming={upcoming} />
               <WeatherDetails current={weatherData.current} today={weatherData.daily[0]} />
+              <CelestialTracker current={weatherData.current} today={weatherData.daily[0]} timezone={weatherData.timezone} />
               <HydrationCalculator current={weatherData.current} />
               <WeatherRadarMap location={weatherData.location} />
               <WeekendPlanner dailyData={weatherData.daily} timezone={weatherData.timezone} />
