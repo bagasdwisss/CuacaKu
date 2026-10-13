@@ -1,15 +1,23 @@
-// src/components/ActivityIndex.jsx
 import React from 'react';
 import { FaRunning, FaBiking, FaUtensils, FaTshirt, FaStar, FaCamera } from 'react-icons/fa';
+import { FiActivity } from 'react-icons/fi';
 import { getLocalHour, isDaytime, formatLocalTime } from '../utils/timeUtils';
 import { getMoonInfo } from '../utils/weatherHelpers';
 
-// --- Pembuat rating ---
-const rate = (color) => (label, reason) => ({ label, reason, color });
-const great = rate('text-green-500');
-const ok = rate('text-yellow-500');
-const bad = rate('text-red-500');
-const idle = rate('text-gray-500');
+// --- Pembuat rating dengan badge status modern ---
+const rate = (status, badgeBg, badgeText, dotColor) => (label, reason) => ({
+  label,
+  reason,
+  status,
+  badgeBg,
+  badgeText,
+  dotColor,
+});
+
+const great = rate('great', 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-400/30', 'text-emerald-600 dark:text-emerald-400', 'bg-emerald-500');
+const ok = rate('ok', 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-400/30', 'text-amber-600 dark:text-amber-400', 'bg-amber-500');
+const bad = rate('bad', 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/30', 'text-rose-600 dark:text-rose-400', 'bg-rose-500');
+const idle = rate('idle', 'bg-gray-500/15 text-gray-700 dark:text-gray-300 border-gray-400/30', 'text-gray-500 dark:text-gray-400', 'bg-gray-400');
 
 const maxOf = (hours, key) => hours.reduce((max, h) => Math.max(max, Number(h[key]) || 0), 0);
 
@@ -159,25 +167,95 @@ const ActivityIndex = ({ dailyData, currentData, upcoming, timezone }) => {
   };
 
   const activities = [
-    { name: 'Olahraga Lari', icon: <FaRunning />, rating: rateRunning(ctx) },
-    { name: 'Bersepeda', icon: <FaBiking />, rating: rateCycling(ctx) },
-    { name: 'Piknik', icon: <FaUtensils />, rating: ratePicnic(ctx) },
-    { name: 'Jemur Pakaian', icon: <FaTshirt />, rating: rateLaundry(ctx) },
-    { name: 'Melihat Bintang', icon: <FaStar />, rating: rateStargazing(ctx) },
-    { name: 'Foto Golden Hour', icon: <FaCamera />, rating: rateGoldenHour(ctx) },
+    {
+      name: 'Olahraga Lari',
+      icon: <FaRunning />,
+      iconBg: 'bg-emerald-50 dark:bg-emerald-950/40',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      rating: rateRunning(ctx),
+    },
+    {
+      name: 'Bersepeda',
+      icon: <FaBiking />,
+      iconBg: 'bg-sky-50 dark:bg-sky-950/40',
+      iconColor: 'text-sky-600 dark:text-sky-400',
+      rating: rateCycling(ctx),
+    },
+    {
+      name: 'Piknik & Santai',
+      icon: <FaUtensils />,
+      iconBg: 'bg-amber-50 dark:bg-amber-950/40',
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      rating: ratePicnic(ctx),
+    },
+    {
+      name: 'Jemur Pakaian',
+      icon: <FaTshirt />,
+      iconBg: 'bg-blue-50 dark:bg-blue-950/40',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      rating: rateLaundry(ctx),
+    },
+    {
+      name: 'Melihat Bintang',
+      icon: <FaStar />,
+      iconBg: 'bg-indigo-50 dark:bg-indigo-950/40',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      rating: rateStargazing(ctx),
+    },
+    {
+      name: 'Foto Golden Hour',
+      icon: <FaCamera />,
+      iconBg: 'bg-orange-50 dark:bg-orange-950/40',
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      rating: rateGoldenHour(ctx),
+    },
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Indeks Aktivitas</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+    <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700/60 transition-colors">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-500 dark:text-emerald-400">
+            <FiActivity size={18} />
+          </div>
+          <div>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">
+              Indeks Aktivitas
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Rekomendasi kenyamanan olahraga, jemuran & kegiatan luar ruangan
+            </p>
+          </div>
+        </div>
+        <span className="hidden sm:inline-flex text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-500/20">
+          Smart Outdoor Tracker
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {activities.map((activity) => (
-          <div key={activity.name} className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="text-3xl text-blue-500 dark:text-blue-400 mx-auto w-fit mb-2">{activity.icon}</div>
-            <p className="font-semibold text-gray-800 dark:text-gray-200">{activity.name}</p>
-            <p className={`font-bold text-lg ${activity.rating.color}`}>{activity.rating.label}</p>
+          <div
+            key={activity.name}
+            className="p-4 rounded-2xl bg-gray-50/80 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/60 hover:border-gray-200 dark:hover:border-gray-600/80 hover:shadow-md transition-all duration-200 flex flex-col justify-between text-left group"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className={`p-2.5 rounded-xl ${activity.iconBg} ${activity.iconColor} transition-transform group-hover:scale-105`}>
+                  {React.cloneElement(activity.icon, { size: 18 })}
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 shadow-sm ${activity.rating.badgeBg}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${activity.rating.dotColor} animate-pulse`} />
+                  {activity.rating.label}
+                </span>
+              </div>
+              <h4 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 tracking-tight">
+                {activity.name}
+              </h4>
+            </div>
             {activity.rating.reason && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{activity.rating.reason}</p>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
+                {activity.rating.reason}
+              </p>
             )}
           </div>
         ))}
