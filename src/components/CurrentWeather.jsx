@@ -5,7 +5,7 @@ import { getWeatherIcon } from '../utils/iconService';
 import { translateWeatherCondition } from '../utils/translations';
 import { isDaytime } from '../utils/timeUtils';
 import { useSettings } from '../context/settingsContext';
-import { WiSunrise, WiSunset, WiStrongWind, WiRaindrops } from 'react-icons/wi';
+import { WiSunrise, WiSunset, WiStrongWind, WiHumidity } from 'react-icons/wi';
 import { FiSun, FiWind } from 'react-icons/fi';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 
@@ -27,13 +27,13 @@ const getWeatherVideo = (iconName = '') => {
   return '/berawanlandscape.mp4';
 };
 
-// Helper fungsi untuk memilih background lokal gradien (fallback)
+// Helper fungsi untuk memilih background lokal gradien fallback
 const getLocalBackgroundClass = (icon, isDay) => {
   const gradients = {
-    clearDay: 'from-sky-500 via-blue-600 to-indigo-700',
-    clearNight: 'from-slate-900 via-indigo-950 to-slate-950',
-    cloudy: 'from-slate-600 via-gray-700 to-slate-800',
-    rain: 'from-slate-700 via-gray-800 to-slate-900',
+    clearDay: 'from-sky-500/80 to-blue-600/80',
+    clearNight: 'from-slate-900/90 to-indigo-950/90',
+    cloudy: 'from-slate-600/80 to-gray-800/80',
+    rain: 'from-slate-700/80 to-gray-900/80',
   };
 
   let bgClass = '';
@@ -51,15 +51,15 @@ const getLocalBackgroundClass = (icon, isDay) => {
 
 // Helper untuk Kualitas Udara (AQI mentah 0-500)
 const AQI_LEVELS = {
-  1: { label: 'Baik', bg: 'bg-emerald-500/90 text-white shadow-emerald-500/40', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' },
-  2: { label: 'Sedang', bg: 'bg-amber-500/90 text-white shadow-amber-500/40', badge: 'bg-amber-500/20 text-amber-300 border-amber-400/30' },
-  3: { label: 'Kurang Sehat', bg: 'bg-orange-500/90 text-white shadow-orange-500/40', badge: 'bg-orange-500/20 text-orange-300 border-orange-400/30' },
-  4: { label: 'Tidak Sehat', bg: 'bg-rose-500/90 text-white shadow-rose-500/40', badge: 'bg-rose-500/20 text-rose-300 border-rose-400/30' },
-  5: { label: 'Sangat Tidak Sehat', bg: 'bg-purple-600/90 text-white shadow-purple-600/40', badge: 'bg-purple-500/20 text-purple-300 border-purple-400/30' },
+  1: { label: 'Baik', dot: 'bg-emerald-400' },
+  2: { label: 'Sedang', dot: 'bg-amber-400' },
+  3: { label: 'Kurang Sehat', dot: 'bg-orange-400' },
+  4: { label: 'Tidak Sehat', dot: 'bg-rose-500' },
+  5: { label: 'Sangat Tidak Sehat', dot: 'bg-purple-500' },
 };
 
 const getAQICategory = (aqi) => {
-  if (aqi === null || aqi === undefined) return { label: 'N/A', bg: 'bg-gray-500/80', badge: 'bg-gray-500/20 text-gray-300 border-gray-400/30' };
+  if (aqi === null || aqi === undefined) return { label: 'N/A', dot: 'bg-gray-400' };
   if (aqi <= 50) return AQI_LEVELS[1];
   if (aqi <= 100) return AQI_LEVELS[2];
   if (aqi <= 150) return AQI_LEVELS[3];
@@ -69,11 +69,11 @@ const getAQICategory = (aqi) => {
 
 // Helper untuk Indeks UV
 const UV_LEVELS = {
-  low: { label: 'Rendah', bg: 'bg-emerald-500/90', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' },
-  moderate: { label: 'Sedang', bg: 'bg-amber-500/90', badge: 'bg-amber-500/20 text-amber-300 border-amber-400/30' },
-  high: { label: 'Tinggi', bg: 'bg-orange-500/90', badge: 'bg-orange-500/20 text-orange-300 border-orange-400/30' },
-  veryHigh: { label: 'Sangat Tinggi', bg: 'bg-rose-500/90', badge: 'bg-rose-500/20 text-rose-300 border-rose-400/30' },
-  extreme: { label: 'Ekstrem', bg: 'bg-purple-600/90', badge: 'bg-purple-500/20 text-purple-300 border-purple-400/30' },
+  low: { label: 'Rendah', dot: 'bg-emerald-400' },
+  moderate: { label: 'Sedang', dot: 'bg-amber-400' },
+  high: { label: 'Tinggi', dot: 'bg-orange-400' },
+  veryHigh: { label: 'Sangat Tinggi', dot: 'bg-rose-500' },
+  extreme: { label: 'Ekstrem', dot: 'bg-purple-500' },
 };
 
 const getUVCategory = (uv) => {
@@ -115,8 +115,8 @@ const CurrentWeather = ({ data }) => {
   const clock = { hour: '2-digit', minute: '2-digit', timeZone: timezone };
 
   return (
-    <div className={`relative p-5 sm:p-8 rounded-3xl shadow-2xl overflow-hidden text-white ${backgroundClass} border border-white/20 transition-all duration-1000`}>
-      {/* 1. Video Background Landscape (Resolusi Asli, Jernih & Terang) */}
+    <div className={`relative p-5 sm:p-7 rounded-2xl shadow-xl overflow-hidden text-white ${backgroundClass} border border-white/15 transition-all duration-700 min-h-[340px] flex flex-col justify-between`}>
+      {/* 1. Video Background Landscape (Jelas, Tanpa Halangan, Sangat Terbuka) */}
       <video
         ref={videoRef}
         key={videoSrc}
@@ -127,144 +127,130 @@ const CurrentWeather = ({ data }) => {
         preload="auto"
         disablePictureInPicture
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-100 contrast-[1.08] transform-gpu opacity-95 transition-opacity duration-700"
+        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-100 contrast-[1.05] transform-gpu opacity-100"
       >
         <source src={videoSrc} type="video/mp4" />
       </video>
 
-      {/* 2. Soft Ambient Lighting / Vignette (Memberikan kedalaman visual tanpa menggelapkan video) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-black/30 z-[1] pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/30 z-[1] pointer-events-none" />
+      {/* 2. Vignette Tipis Minimalis di Tepian (Hanya untuk kontras teks putih, video tetap nampak 90% jernih) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/35 z-[1] pointer-events-none" />
 
-      {/* 3. Lapisan Animasi Cuaca Tambahan jika ada (z-[2]) */}
+      {/* 3. Lapisan Animasi Partikel Tambahan jika ada */}
       <div className="absolute inset-0 w-full h-full z-[2] pointer-events-none">
         <WeatherAnimation weatherIcon={current.icon} />
       </div>
 
-      {/* 4. Lapisan Konten Utama Berbasis Glassmorphism (z-10) */}
-      <div className="relative z-10 space-y-6">
-        {/* Header Bar: Lokasi, Tanggal, & Panel Matahari Terbit/Terbenam */}
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-          <div className="glass-panel px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl border border-white/25 shadow-lg w-full sm:w-auto">
+      {/* 4. Konten Minimalis & Elegan Mengambang Bebas di Atas Video (z-10) */}
+      <div className="relative z-10 flex flex-col justify-between h-full space-y-6">
+        
+        {/* Baris Atas: Lokasi & Waktu (Kiri), Info Terbit / Terbenam Tipis (Kanan) */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
             <div className="flex items-center gap-2">
-              <FaMapMarkerAlt className="text-red-400 drop-shadow text-base sm:text-lg flex-shrink-0 animate-pulse" />
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <FaMapMarkerAlt className="text-red-400 text-sm drop-shadow" />
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {location.name}
                 {location.country && location.name.toLowerCase() !== location.country.toLowerCase() ? `, ${location.country}` : ''}
               </h2>
             </div>
-            <p className="text-white/90 text-xs sm:text-sm mt-1 font-medium tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] pl-6">
+            <p className="text-white/80 text-xs mt-0.5 font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
               {new Date().toLocaleString('id-ID', timeFormatOptions)}
             </p>
           </div>
 
-          {/* Sunrise / Sunset Pill Badge */}
-          <div className="glass-panel px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl border border-white/25 shadow-lg flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-              <WiSunrise size={32} className="text-amber-300 drop-shadow-[0_2px_6px_rgba(251,191,36,0.6)]" />
-              <div className="text-left">
-                <span className="text-[10px] sm:text-xs text-white/75 uppercase tracking-wider block font-semibold">Terbit</span>
-                <span className="text-xs sm:text-sm font-bold drop-shadow tracking-wide">
-                  {new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}
-                </span>
-              </div>
+          {/* Jam Terbit & Terbenam Minimalis (Inline Pill Ringan) */}
+          <div className="flex items-center gap-3 bg-black/25 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-xs text-white/90">
+            <div className="flex items-center gap-1">
+              <WiSunrise size={20} className="text-amber-300 drop-shadow" />
+              <span>{new Date(current.sunriseEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
-            <div className="w-[1px] h-7 bg-white/20" />
-            <div className="flex items-center gap-2">
-              <WiSunset size={32} className="text-orange-400 drop-shadow-[0_2px_6px_rgba(251,146,60,0.6)]" />
-              <div className="text-left">
-                <span className="text-[10px] sm:text-xs text-white/75 uppercase tracking-wider block font-semibold">Terbenam</span>
-                <span className="text-xs sm:text-sm font-bold drop-shadow tracking-wide">
-                  {new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}
-                </span>
-              </div>
+            <span className="text-white/30">•</span>
+            <div className="flex items-center gap-1">
+              <WiSunset size={20} className="text-orange-400 drop-shadow" />
+              <span>{new Date(current.sunsetEpoch * 1000).toLocaleTimeString('id-ID', clock)}</span>
             </div>
           </div>
         </div>
 
-        {/* Hero Suhu & Status Cuaca */}
-        <div className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/30 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-5 sm:gap-7 w-full sm:w-auto">
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/25 shadow-inner flex-shrink-0 text-amber-300 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        {/* Baris Tengah: Suhu Utama, Ikon, & Kondisi Cuaca (Bersih, Ramping, Anggun) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 py-2">
+          <div className="flex items-center gap-4">
+            <div className="drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
               {getWeatherIcon(current.icon)}
             </div>
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl sm:text-7xl font-black tracking-tighter drop-shadow-[0_4px_14px_rgba(0,0,0,0.85)]">
+                <span className="text-5xl sm:text-6xl font-bold tracking-tight drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)]">
                   {formatTemp(current.temp)}
                 </span>
+                <span className="text-xs sm:text-sm text-white/80 drop-shadow">
+                  Terasa {formatTemp(current.feelslike)}
+                </span>
               </div>
-              <p className="text-sm sm:text-base text-white/90 font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                Terasa seperti <span className="font-bold text-white">{formatTemp(current.feelslike)}</span>
+              <p className="text-sm sm:text-base font-semibold capitalize text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {translateWeatherCondition(current.conditions)}
               </p>
             </div>
           </div>
+        </div>
 
-          <div className="w-full sm:w-auto text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-white/15">
-            <span className="inline-block px-4 py-1.5 rounded-full text-sm sm:text-base font-semibold capitalize bg-white/20 border border-white/30 backdrop-blur-md shadow-md text-white drop-shadow">
-              {translateWeatherCondition(current.conditions)}
-            </span>
+        {/* Baris Bawah: 4 Metrik Ringkas dengan Efek Frosted Glass Ramping (Tidak Menghalangi Video) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          {/* UV Index */}
+          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiSun className="text-amber-300 text-sm drop-shadow" />
+              <div className="text-left">
+                <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">UV Index</p>
+                <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
+                  {uvCategory.label} ({current.uvindex})
+                </p>
+              </div>
+            </div>
+            <span className={`w-2 h-2 rounded-full ${uvCategory.dot} shadow-sm`} />
+          </div>
+
+          {/* Kelembapan */}
+          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <WiHumidity size={20} className="text-sky-300 -my-1 drop-shadow" />
+              <div className="text-left">
+                <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">Kelembapan</p>
+                <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
+                  {Math.round(current.humidity)}%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Kecepatan Angin */}
+          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <WiStrongWind size={20} className="text-teal-300 -my-1 drop-shadow" />
+              <div className="text-left">
+                <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">Angin</p>
+                <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
+                  {formatWind(current.windspeed)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Indeks Udara (AQI) */}
+          <div className="bg-black/25 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/15 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiWind className="text-emerald-300 text-sm drop-shadow" />
+              <div className="text-left">
+                <p className="text-[10px] text-white/70 uppercase font-medium tracking-wider">AQI</p>
+                <p className="text-xs sm:text-sm font-bold text-white drop-shadow">
+                  {aqiData.label} ({current.aqi ?? 'N/A'})
+                </p>
+              </div>
+            </div>
+            <span className={`w-2 h-2 rounded-full ${aqiData.dot} shadow-sm`} />
           </div>
         </div>
 
-        {/* 4 Kartu Metrik Cuaca Glassmorphism Premium */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {/* 1. UV Index */}
-          <div className="glass-card rounded-2xl p-4 flex flex-col justify-between items-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-xl group">
-            <div className="flex items-center gap-1.5 text-white/85 text-xs sm:text-sm font-medium tracking-wide">
-              <FiSun className="text-amber-300 text-sm" />
-              <span>UV Index</span>
-            </div>
-            <div className="my-2.5">
-              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-md border ${uvCategory.badge}`}>
-                {uvCategory.label} ({current.uvindex})
-              </span>
-            </div>
-            <span className="text-[11px] text-white/70 font-light">Kekuatan Paparan</span>
-          </div>
-
-          {/* 2. Kelembapan */}
-          <div className="glass-card rounded-2xl p-4 flex flex-col justify-between items-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-xl group">
-            <div className="flex items-center gap-1.5 text-white/85 text-xs sm:text-sm font-medium tracking-wide">
-              <WiRaindrops size={22} className="text-sky-300 -my-1" />
-              <span>Kelembapan</span>
-            </div>
-            <div className="my-1.5">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                {Math.round(current.humidity)}%
-              </span>
-            </div>
-            <span className="text-[11px] text-white/70 font-light">Kandungan Uap</span>
-          </div>
-
-          {/* 3. Kecepatan Angin */}
-          <div className="glass-card rounded-2xl p-4 flex flex-col justify-between items-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-xl group">
-            <div className="flex items-center gap-1.5 text-white/85 text-xs sm:text-sm font-medium tracking-wide">
-              <WiStrongWind size={20} className="text-teal-300 -my-0.5" />
-              <span>Kecepatan Angin</span>
-            </div>
-            <div className="my-1.5">
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                {formatWind(current.windspeed)}
-              </span>
-            </div>
-            <span className="text-[11px] text-white/70 font-light">Laju Udara</span>
-          </div>
-
-          {/* 4. Indeks Udara (AQI) */}
-          <div className="glass-card rounded-2xl p-4 flex flex-col justify-between items-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-xl group">
-            <div className="flex items-center gap-1.5 text-white/85 text-xs sm:text-sm font-medium tracking-wide">
-              <FiWind className="text-emerald-300 text-sm" />
-              <span>Indeks Udara (AQI)</span>
-            </div>
-            <div className="my-2.5">
-              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-md border ${aqiData.badge}`}>
-                {aqiData.label} ({current.aqi ?? 'N/A'})
-              </span>
-            </div>
-            <span className="text-[11px] text-white/70 font-light">Kualitas Udara</span>
-          </div>
-        </div>
       </div>
     </div>
   );
